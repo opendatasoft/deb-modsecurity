@@ -1,0 +1,5 @@
+modsecurity (3.0.2-1) unstable; urgency=medium
+
+  * Initial release (Closes: #909025)
+
+ -- Alberto Gonzalez Iniesta <agi@inittab.org>  Mon, 17 Sep 2018 13:16:27 +0200
