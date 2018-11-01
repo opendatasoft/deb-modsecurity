@@ -5,8 +5,8 @@ Build-Depends: debhelper (>= 11), libyajl-dev, libgeoip-dev, libxml2-dev, libpcr
 Standards-Version: 4.2.1
 Section: libs
 Homepage: https://www.modsecurity.org/
-#Vcs-Browser: https://salsa.debian.org/debian/modsecurity
-#Vcs-Git: https://salsa.debian.org/debian/modsecurity.git
+Vcs-Browser: https://salsa.debian.org/agi/modsecurity
+Vcs-Git: https://salsa.debian.org/agi/modsecurity.git
 
 Package: libmodsecurity-dev
 Section: libdevel
