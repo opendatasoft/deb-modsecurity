@@ -1,0 +1,43 @@
+Index: modsecurity/test/test-cases/regression/config-secremoterules.json
+===================================================================
+--- modsecurity.orig/test/test-cases/regression/config-secremoterules.json	2018-11-01 19:27:28.137759232 +0100
++++ modsecurity/test/test-cases/regression/config-secremoterules.json	2018-11-19 17:00:20.679158027 +0100
+@@ -1,6 +1,6 @@
+ [
+   {
+-    "enabled":1,
++    "enabled":0,
+     "version_min":300000,
+     "resource": "curl",
+     "title":"Include remote rules",
+@@ -41,7 +41,7 @@
+     ]
+   },
+   {
+-    "enabled":1,
++    "enabled":0,
+     "resource": "curl",
+     "version_min":300000,
+     "title":"Include remote rules - failed download (Abort)",
+@@ -55,7 +55,7 @@
+     ]
+   },
+   {
+-    "enabled":1,
++    "enabled":0,
+     "resource": "curl",
+     "version_min":300000,
+     "title":"Include remote rules - failed download (Warn)",
+Index: modsecurity/test/test-cases/regression/operator-ipMatchFromFile.json
+===================================================================
+--- modsecurity.orig/test/test-cases/regression/operator-ipMatchFromFile.json	2018-11-01 19:27:28.141759256 +0100
++++ modsecurity/test/test-cases/regression/operator-ipMatchFromFile.json	2018-11-19 17:00:39.899395209 +0100
+@@ -88,7 +88,7 @@
+     ]
+   },
+   {
+-    "enabled":1,
++    "enabled":0,
+     "version_min":300000,
+     "resource": "curl",
+     "title":"Testing Operator :: @ipMatchFromFile - https",
