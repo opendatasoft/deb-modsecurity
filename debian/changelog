@@ -1,6 +1,10 @@
 modsecurity (3.0.2-2) UNRELEASED; urgency=medium
 
   * debian/copyright: Updated with all copyrights/licenses (Closes: #911153)
+  * debian/patches: Add disable-network-dependent-tests.patch
+
+  [ Ervin Hegedüs ]
+  * debian/rules: Export TERM var required for test case.
 
  -- Alberto Gonzalez Iniesta <agi@inittab.org>  Mon, 26 Nov 2018 22:30:05 +0100
 

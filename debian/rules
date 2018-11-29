@@ -5,6 +5,9 @@ DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 # an extra package while keeping the library package multiarch
 CONFIGURE_EXTRA_FLAGS += --bindir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH)/libexec
 
+# pass TERM env to regression test, avoid to kept it after build
+export TERM=$(shell if [ -z $TERM ]; then echo "linux"; else echo $TERM; fi)
+
 %:
 	dh $@
 
