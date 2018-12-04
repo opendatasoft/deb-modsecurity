@@ -34,9 +34,16 @@
 namespace modsecurity {
 namespace Variables {
 class Variable;
+class Variables;
 }
 namespace actions {
 class Action;
+class Severity;
+class LogData;
+class Msg;
+class Rev;
+class SetVar;
+class Tag;
 }
 namespace operators {
 class Operator;
@@ -45,7 +52,7 @@ class Operator;
 class Rule {
  public:
     Rule(operators::Operator *_op,
-            std::vector<Variables::Variable *> *_variables,
+            Variables::Variables *_variables,
             std::vector<actions::Action *> *_actions,
             std::string fileName,
             int lineNumber);
@@ -54,30 +61,44 @@ class Rule {
 
     virtual bool evaluate(Transaction *transaction,
         std::shared_ptr<RuleMessage> rm);
-    bool evaluateActions(Transaction *transaction);
-    std::vector<std::unique_ptr<VariableValue>>
-	getFinalVars(Transaction *trasn);
+
+    void organizeActions(std::vector<actions::Action *> *actions);
+    void cleanUpActions();
+    void executeAction(Transaction *trans,
+    bool containsBlock, std::shared_ptr<RuleMessage> ruleMessage,
+        actions::Action *a, bool context);
+
+    inline void executeTransformation(actions::Action *a,
+        std::shared_ptr<std::string> *value,
+        Transaction *trans,
+        std::list<std::pair<std::shared_ptr<std::string>,
+        std::shared_ptr<std::string>>> *ret,
+        std::string *path,
+        int *nth);
+
+    void getVariablesExceptions(Transaction *t,
+        Variables::Variables *exclusion, Variables::Variables *addition);
+    inline void getFinalVars(Variables::Variables *vars,
+        Variables::Variables *eclusion, Transaction *trans);
     void executeActionsAfterFullMatch(Transaction *trasn,
         bool containsDisruptive, std::shared_ptr<RuleMessage> ruleMessage);
 
     std::list<std::pair<std::shared_ptr<std::string>,
         std::shared_ptr<std::string>>> executeDefaultTransformations(
-        Transaction *trasn, const std::string &value, bool multiMatch);
+        Transaction *trasn, const std::string &value);
 
     bool executeOperatorAt(Transaction *trasn, std::string key,
         std::string value, std::shared_ptr<RuleMessage> rm);
     void executeActionsIndependentOfChainedRuleResult(Transaction *trasn,
         bool *b, std::shared_ptr<RuleMessage> ruleMessage);
-    void updateMatchedVars(Transaction *trasn, std::string key,
-        std::string value);
-    void cleanMatchedVars(Transaction *trasn);
-    void updateRulesVariable(Transaction *trasn);
+    inline void updateMatchedVars(Transaction *trasn, const std::string &key,
+        const std::string &value);
+    inline void cleanMatchedVars(Transaction *trasn);
 
-    std::vector<std::string> getActionNames();
-    std::vector<actions::Action *> getActionsByName(const std::string& name);
+    std::vector<actions::Action *> getActionsByName(const std::string& name,
+        Transaction *t);
     bool containsTag(const std::string& name, Transaction *t);
     bool containsMsg(const std::string& name, Transaction *t);
-    bool containsDisruptiveAction();
 
     int refCountDecreaseAndCheck() {
         m_referenceCount--;
@@ -93,26 +114,42 @@ class Rule {
         m_referenceCount++;
     }
 
+    void executeTransformations(
+        actions::Action *a,
+        std::shared_ptr<std::string> newValue,
+        std::shared_ptr<std::string> value,
+        Transaction *trans,
+        std::list<std::pair<std::shared_ptr<std::string>,
+        std::shared_ptr<std::string>>> *ret,
+        std::shared_ptr<std::string> transStr,
+        int nth);
 
+    actions::Action *m_theDisruptiveAction;
+    actions::LogData *m_logData;
+    actions::Msg *m_msg;
+    actions::Severity *m_severity;
+    bool m_chained;
+    bool m_containsCaptureAction;
+    bool m_containsMultiMatchAction;
+    bool m_containsStaticBlockAction;
+    bool m_secMarker;
+    int64_t m_ruleId;
     int m_accuracy;
-    std::vector<actions::Action *> m_actionsConf;
+    int m_lineNumber;
+    int m_maturity;
+    int m_phase;
+    modsecurity::Variables::Variables *m_variables;
+    operators::Operator *m_op;
+    Rule *m_chainedRuleChild;
+    Rule *m_chainedRuleParent;
+    std::string m_fileName;
+    std::string m_marker;
+    std::string m_rev;
+    std::string m_ver;
     std::vector<actions::Action *> m_actionsRuntimePos;
     std::vector<actions::Action *> m_actionsRuntimePre;
-    bool m_chained;
-    Rule *m_chainedRule;
-    std::string m_fileName;
-    int m_lineNumber;
-    std::string m_logData;
-    std::string m_marker;
-    int m_maturity;
-    operators::Operator *m_op;
-    int m_phase;
-    std::string m_rev;
-    int64_t m_ruleId;
-    bool m_secMarker;
-    std::vector<Variables::Variable *> *m_variables;
-    std::string m_ver;
-
+    std::vector<actions::SetVar *> m_actionsSetVar;
+    std::vector<actions::Tag *> m_actionsTag;
  private:
     bool m_unconditional;
     int m_referenceCount;

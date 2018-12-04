@@ -190,7 +190,7 @@ namespace modsecurity {
 
 #define MODSECURITY_MAJOR "3"
 #define MODSECURITY_MINOR "0"
-#define MODSECURITY_PATCHLEVEL "2"
+#define MODSECURITY_PATCHLEVEL "3"
 #define MODSECURITY_TAG ""
 #define MODSECURITY_TAG_NUM "100"
 
@@ -317,7 +317,7 @@ extern "C" {
 #endif
 
 /** @ingroup ModSecurity_C_API */
-ModSecurity *msc_init();
+ModSecurity *msc_init(void);
 /** @ingroup ModSecurity_C_API */
 const char *msc_who_am_i(ModSecurity *msc);
 /** @ingroup ModSecurity_C_API */

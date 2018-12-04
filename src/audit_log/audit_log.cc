@@ -209,24 +209,36 @@ bool AuditLog::setType(AuditLogType audit_type) {
 
 
 bool AuditLog::init(std::string *error) {
+    audit_log::writer::Writer *tmp_writer;
+
+    if (m_status == OffAuditLogStatus || m_status == NotSetLogStatus) {
+        if (m_writer) {
+            delete m_writer;
+            m_writer = NULL;
+        }
+        return true;
+    }
+
     if (m_type == ParallelAuditLogType) {
-        m_writer = new audit_log::writer::Parallel(this);
+        tmp_writer = new audit_log::writer::Parallel(this);
     } else if (m_type == HttpsAuditLogType) {
-        m_writer = new audit_log::writer::Https(this);
+        tmp_writer = new audit_log::writer::Https(this);
     } else {
         /*
          * if (m_type == SerialAuditLogType
          * || m_type == NotSetAuditLogType)
          *
          */
-        m_writer = new audit_log::writer::Serial(this);
+        tmp_writer = new audit_log::writer::Serial(this);
     }
 
-    if (m_status == OffAuditLogStatus || m_status == NotSetLogStatus) {
-        return true;
+    if (tmp_writer == NULL) {
+        error->assign("Writer memory alloc failed!");
+        return false;
     }
 
-    if (m_writer == NULL || m_writer->init(error) == false) {
+    if (tmp_writer->init(error) == false) {
+        delete tmp_writer;
         return false;
     }
 
@@ -234,16 +246,22 @@ bool AuditLog::init(std::string *error) {
     if (m_status == RelevantOnlyAuditLogStatus) {
         if (m_relevant.empty()) {
             /*
-            error->assign("m_relevant cannot be null while status is set to " \
+             error->assign("m_relevant cannot be null while status is set to " \
                 "RelevantOnly");
-            return false;
-            */
+             return false;
+             */
             // FIXME: this should be a warning. There is not point to
             // have the logs on relevant only if nothing is relevant.
             //
             // Not returning an error to keep the compatibility with v2.
         }
     }
+
+    if (m_writer) {
+        delete m_writer;
+    }
+
+    m_writer = tmp_writer;
 
     return true;
 }
@@ -274,9 +292,7 @@ bool AuditLog::saveIfRelevant(Transaction *transaction) {
 bool AuditLog::saveIfRelevant(Transaction *transaction, int parts) {
     bool saveAnyway = false;
     if (m_status == OffAuditLogStatus || m_status == NotSetLogStatus) {
-#ifndef NO_LOGS
-        transaction->debug(5, "Audit log engine was not set.");
-#endif
+        ms_dbg_a(transaction, 5, "Audit log engine was not set.");
         return true;
     }
 
@@ -290,12 +306,10 @@ bool AuditLog::saveIfRelevant(Transaction *transaction, int parts) {
     if ((m_status == RelevantOnlyAuditLogStatus
         && this->isRelevant(transaction->m_httpCodeReturned) == false)
         && saveAnyway == false) {
-#ifndef NO_LOGS
-        transaction->debug(9, "Return code `" +
+        ms_dbg_a(transaction, 9, "Return code `" +
             std::to_string(transaction->m_httpCodeReturned) + "'" \
             " is not interesting to audit logs, relevant code(s): `" +
             m_relevant + "'.");
-#endif
 
         return false;
     }
@@ -303,21 +317,15 @@ bool AuditLog::saveIfRelevant(Transaction *transaction, int parts) {
     if (parts == -1) {
         parts = m_parts;
     }
-#ifndef NO_LOGS
-    transaction->debug(5, "Saving this request as part " \
+    ms_dbg_a(transaction, 5, "Saving this request as part " \
             "of the audit logs.");
-#endif
     if (m_writer == NULL) {
-#ifndef NO_LOGS
-        transaction->debug(1, "Internal error, audit log writer is null");
-#endif
+        ms_dbg_a(transaction, 1, "Internal error, audit log writer is null");
     } else {
         std::string error;
         bool a = m_writer->write(transaction, parts, &error);
         if (a == false) {
-#ifndef NO_LOGS
-            transaction->debug(1, "Cannot save the audit log: " + error);
-#endif
+            ms_dbg_a(transaction, 1, "Cannot save the audit log: " + error);
             return false;
         }
     }

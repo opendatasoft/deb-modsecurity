@@ -14,37 +14,40 @@
  */
 
 #include <string>
+#include <utility>
 #include <memory>
 
 #include "modsecurity/actions/action.h"
-#include "modsecurity/rule_message.h"
+#include "src/run_time_string.h"
 
-#ifndef SRC_ACTIONS_DISRUPTIVE_BLOCK_H_
-#define SRC_ACTIONS_DISRUPTIVE_BLOCK_H_
+#ifndef SRC_ACTIONS_SET_ENV_H_
+#define SRC_ACTIONS_SET_ENV_H_
 
-#ifdef __cplusplus
 class Transaction;
 
 namespace modsecurity {
 class Transaction;
-
 namespace actions {
-namespace disruptive {
 
 
-class Block : public Action {
+class SetENV : public Action {
  public:
-    explicit Block(std::string action) : Action(action) { }
+    explicit SetENV(std::string _action)
+        : Action(_action) { }
 
-    bool evaluate(Rule *rule, Transaction *transaction,
-        std::shared_ptr<RuleMessage> rm) override;
-    bool isDisruptive() override { return true; }
+    explicit SetENV(std::unique_ptr<RunTimeString> z)
+        : Action("setenv", RunTimeOnlyIfMatchKind),
+            m_string(std::move(z)) { }
+
+    bool evaluate(Rule *rule, Transaction *transaction) override;
+    bool init(std::string *error) override;
+
+ private:
+    std::unique_ptr<RunTimeString> m_string;
 };
 
 
-}  // namespace disruptive
 }  // namespace actions
 }  // namespace modsecurity
-#endif
 
-#endif  // SRC_ACTIONS_DISRUPTIVE_BLOCK_H_
+#endif  // SRC_ACTIONS_SET_ENV_H_

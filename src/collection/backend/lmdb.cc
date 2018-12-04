@@ -24,9 +24,9 @@
 
 #include "modsecurity/variable_value.h"
 #include "src/utils/regex.h"
+#include "src/variables/variable.h"
 
 #undef LMDB_STDOUT_COUT
-
 
 namespace modsecurity {
 namespace collection {
@@ -35,8 +35,8 @@ namespace backend {
 
 #ifdef WITH_LMDB
 
-
-LMDB::LMDB() : Collection(""), m_env(NULL) {
+LMDB::LMDB(std::string name) :
+    Collection(name), m_env(NULL) {
     mdb_env_create(&m_env);
     mdb_env_open(m_env, "./modsec-shared-collections",
         MDB_WRITEMAP | MDB_NOSUBDIR, 0664);
@@ -121,7 +121,7 @@ void LMDB::lmdb_debug(int rc, std::string op, std::string scope) {
         }
         std::cout << std::endl;
     } else if (op == "del") {
-        td::cout << scope << ", delete procedure failed: ";
+        std::cout << scope << ", delete procedure failed: ";
         switch (rc) {
             case EACCES:
                 std::cout << "an attempt was made to write in a ";
@@ -466,7 +466,8 @@ end_txn:
 
 
 void LMDB::resolveMultiMatches(const std::string& var,
-    std::vector<const VariableValue *> *l) {
+    std::vector<const VariableValue *> *l,
+    Variables::KeyExclusions &ke) {
     MDB_val key, data;
     MDB_txn *txn = NULL;
     MDB_dbi dbi;
@@ -493,23 +494,27 @@ void LMDB::resolveMultiMatches(const std::string& var,
         goto end_cursor_open;
     }
 
-    while ((rc = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
-        if (key.mv_size <= keySize + 1) {
-            continue;
-        }
-        char *a = reinterpret_cast<char *>(key.mv_data);
-        if (a[keySize] != ':') {
-            continue;
-        }
-        if (strncmp(var.c_str(), a, keySize) != 0) {
-            continue;
-        }
-        VariableValue *v = new VariableValue(
-            new std::string(reinterpret_cast<char *>(key.mv_data),
+    if (keySize == 0) {
+        while ((rc = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
+            l->insert(l->begin(), new VariableValue(
+                &m_name,
+                new std::string(reinterpret_cast<char *>(key.mv_data),
                 key.mv_size),
-            new std::string(reinterpret_cast<char *>(data.mv_data),
-                data.mv_size));
-        l->insert(l->begin(), v);
+                new std::string(reinterpret_cast<char *>(data.mv_data),
+                data.mv_size)));
+        }
+    } else {
+        while ((rc = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
+            char *a = reinterpret_cast<char *>(key.mv_data);
+            if (strncmp(var.c_str(), a, keySize) == 0) {
+                l->insert(l->begin(), new VariableValue(
+                    &m_name,
+                    new std::string(reinterpret_cast<char *>(key.mv_data),
+                    key.mv_size),
+                    new std::string(reinterpret_cast<char *>(data.mv_data),
+                    data.mv_size)));
+            }
+        }
     }
 
     mdb_cursor_close(cursor);
@@ -523,7 +528,8 @@ end_txn:
 
 
 void LMDB::resolveRegularExpression(const std::string& var,
-    std::vector<const VariableValue *> *l) {
+    std::vector<const VariableValue *> *l,
+    Variables::KeyExclusions &ke) {
     MDB_val key, data;
     MDB_txn *txn = NULL;
     MDB_dbi dbi;
@@ -532,30 +538,7 @@ void LMDB::resolveRegularExpression(const std::string& var,
     MDB_cursor *cursor;
     size_t pos;
 
-    pos = var.find(":");
-    if (pos == std::string::npos) {
-        return;
-    }
-    if (var.size() < pos + 3) {
-        return;
-    }
-    pos = var.find(":", pos + 2);
-    if (pos == std::string::npos) {
-        return;
-    }
-    if (var.size() < pos + 3) {
-        return;
-    }
-
-    std::string nameSpace = std::string(var, 0, pos);
-    size_t pos2 = var.find(":", pos + 1) - pos - 1;
-    std::string col = std::string(var, pos + 1, pos2);
-    pos = pos2 + pos + 3;
-    pos2 = var.size() - pos2 - pos;
-    std::string name = std::string(var, pos, pos2);
-
-    size_t keySize = nameSpace.size();
-    Utils::Regex r = Utils::Regex(name);
+    Utils::Regex r = Utils::Regex(var);
 
     rc = mdb_txn_begin(m_env, NULL, 0, &txn);
     lmdb_debug(rc, "txn", "resolveRegularExpression");
@@ -575,25 +558,14 @@ void LMDB::resolveRegularExpression(const std::string& var,
         goto end_cursor_open;
     }
 
-    std::cout << std::endl;
     while ((rc = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
-        if (key.mv_size <= keySize) {
-            continue;
-        }
         char *a = reinterpret_cast<char *>(key.mv_data);
-        if (a[keySize] != ':') {
-            continue;
-        }
-        std::string ns = std::string(a, keySize);
-        if (ns != nameSpace) {
-            continue;
-        }
-
-        std::string content = std::string(a, keySize + 1,
-            key.mv_size - keySize - 1);
-
-        int ret = Utils::regex_search(content, r);
+        int ret = Utils::regex_search(a, r);
         if (ret <= 0) {
+            continue;
+        }
+        if (ke.toOmit(std::string(reinterpret_cast<char *>(key.mv_data),
+                key.mv_size))) {
             continue;
         }
 

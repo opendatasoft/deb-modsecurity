@@ -54,16 +54,14 @@ bool Rx::evaluate(Transaction *transaction, Rule *rule,
     }
 
     matches = re->searchAll(input);
-    if (rule && rule->getActionsByName("capture").size() > 0 && transaction) {
+    if (rule && rule->m_containsCaptureAction && transaction) {
         int i = 0;
         matches.reverse();
         for (const SMatch& a : matches) {
             transaction->m_collections.m_tx_collection->storeOrUpdateFirst(
                 std::to_string(i), a.match);
-#ifndef NO_LOGS
-            transaction->debug(7, "Added regex subexpression TX." +
+            ms_dbg_a(transaction, 7, "Added regex subexpression TX." +
                 std::to_string(i) + ": " + a.match);
-#endif
             transaction->m_matched.push_back(a.match);
             i++;
         }
