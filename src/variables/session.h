@@ -14,10 +14,11 @@
  */
 
 #include <iostream>
-#include <string>
-#include <vector>
 #include <list>
+#include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
 #ifndef SRC_VARIABLES_SESSION_H_
 #define SRC_VARIABLES_SESSION_H_
@@ -34,15 +35,15 @@ namespace Variables {
 class Session_DictElement : public Variable {
  public:
     explicit Session_DictElement(std::string dictElement)
-        : Variable("SESSION"),
-        m_dictElement(dictElement) { }
+        : Variable("SESSION:" + dictElement),
+        m_dictElement("SESSION:" + dictElement) { }
 
     void evaluate(Transaction *t,
         Rule *rule,
         std::vector<const VariableValue *> *l) override {
         t->m_collections.m_session_collection->resolveMultiMatches(
-            m_dictElement, t->m_collections.m_session_collection_key,
-            t->m_rules->m_secWebAppId.m_value, l);
+            m_name, t->m_collections.m_session_collection_key,
+            t->m_rules->m_secWebAppId.m_value, l, m_keyExclusion);
     }
 
     std::string m_dictElement;
@@ -57,29 +58,27 @@ class Session_NoDictElement : public Variable {
     void evaluate(Transaction *t,
         Rule *rule,
         std::vector<const VariableValue *> *l) override {
-        t->m_collections.m_session_collection->resolveMultiMatches(m_name,
+        t->m_collections.m_session_collection->resolveMultiMatches("",
             t->m_collections.m_session_collection_key,
-            t->m_rules->m_secWebAppId.m_value, l);
+            t->m_rules->m_secWebAppId.m_value, l, m_keyExclusion);
     }
 };
 
 
-class Session_DictElementRegexp : public Variable {
+class Session_DictElementRegexp : public VariableRegex {
  public:
     explicit Session_DictElementRegexp(std::string dictElement)
-        : Variable("SESSION:regex(" + dictElement + ")"),
-        m_r(dictElement),
+        : VariableRegex("SESSION", dictElement),
         m_dictElement(dictElement) { }
 
     void evaluate(Transaction *t,
         Rule *rule,
         std::vector<const VariableValue *> *l) override {
-        t->m_collections.m_session_collection->resolveRegularExpression(m_dictElement,
-            t->m_collections.m_session_collection_key,
-            t->m_rules->m_secWebAppId.m_value, l);
+        t->m_collections.m_session_collection->resolveRegularExpression(
+            m_dictElement, t->m_collections.m_session_collection_key,
+            t->m_rules->m_secWebAppId.m_value, l, m_keyExclusion);
     }
 
-    Utils::Regex m_r;
     std::string m_dictElement;
 };
 
@@ -96,18 +95,21 @@ class Session_DynamicElement : public Variable {
         std::string string = m_string->evaluate(t);
         t->m_collections.m_session_collection->resolveMultiMatches(
             string,
-            t->m_collections.m_session_collection_key, l);
+            t->m_collections.m_session_collection_key,
+            t->m_rules->m_secWebAppId.m_value, l, m_keyExclusion);
     }
 
     void del(Transaction *t, std::string k) {
         t->m_collections.m_session_collection->del(k,
-            t->m_collections.m_session_collection_key);
+            t->m_collections.m_session_collection_key,
+            t->m_collections.m_ip_collection_key);
     }
 
     void storeOrUpdateFirst(Transaction *t, std::string var,
         std::string value) {
         t->m_collections.m_session_collection->storeOrUpdateFirst(
             var, t->m_collections.m_session_collection_key,
+            t->m_rules->m_secWebAppId.m_value,
             value);
     }
 

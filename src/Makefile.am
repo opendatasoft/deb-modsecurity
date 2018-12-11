@@ -106,19 +106,20 @@ ACTIONS = \
 	actions/accuracy.cc \
 	actions/action.cc \
 	actions/audit_log.cc \
+	actions/block.cc \
 	actions/capture.cc \
 	actions/chain.cc \
 	actions/ctl/audit_log_parts.cc \
 	actions/ctl/rule_engine.cc \
 	actions/ctl/request_body_processor_json.cc \
 	actions/ctl/request_body_processor_xml.cc \
+	actions/ctl/request_body_processor_urlencoded.cc \
 	actions/ctl/rule_remove_target_by_tag.cc \
 	actions/ctl/rule_remove_target_by_id.cc \
 	actions/ctl/rule_remove_by_id.cc \
 	actions/ctl/rule_remove_by_tag.cc \
 	actions/ctl/request_body_access.cc\
 	actions/disruptive/allow.cc \
-	actions/disruptive/block.cc \
 	actions/disruptive/deny.cc \
 	actions/disruptive/redirect.cc \
 	actions/disruptive/pass.cc \
@@ -135,6 +136,7 @@ ACTIONS = \
 	actions/rev.cc \
 	actions/rule_id.cc \
 	actions/severity.cc \
+	actions/set_env.cc \
 	actions/set_rsc.cc \
 	actions/set_sid.cc \
 	actions/set_uid.cc \
@@ -277,6 +279,7 @@ libmodsecurity_la_SOURCES = \
 	rule_script.cc \
 	unique_id.cc \
 	rules_exceptions.cc \
+	rules_properties.cc \
 	${BODY_PROCESSORS} \
 	${ACTIONS} \
 	${ENGINES} \

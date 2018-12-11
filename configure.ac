@@ -7,7 +7,7 @@ AC_DEFUN([MSC_GIT_HASH], m4_esyscmd_s(git log -1 --format="%h" --abbrev-commit))
 AC_DEFUN([MSC_MAJOR], m4_esyscmd_s(cat headers/modsecurity/modsecurity.h | grep "define MODSECURITY_MAJOR " | awk {'print $3'} | sed 's/\"//g'))
 AC_DEFUN([MSC_MINOR], m4_esyscmd_s(cat headers/modsecurity/modsecurity.h | grep "define MODSECURITY_MINOR " | awk {'print $3'} | sed 's/\"//g'))
 AC_DEFUN([MSC_PATCHLEVEL], m4_esyscmd_s(cat headers/modsecurity/modsecurity.h | grep "define MODSECURITY_PATCHLEVEL " | awk {'print $3'} | sed 's/\"//g'))
-AC_DEFUN([MSC_TAG], m4_esyscmd_s(cat headers/modsecurity/modsecurity.h | grep "define MODSECURITY_TAG " | awk {'print $3'} | sed 's/\"//g'))
+AC_DEFUN([MSC_TAG], m4_esyscmd_s(cat headers/modsecurity/modsecurity.h | grep "define MODSECURITY_FTAG " | awk {'print $3'} | sed 's/\"//g'))
 
 
 # Version definition to be further used by AC_INIT and 
@@ -21,6 +21,9 @@ m4_define([msc_version_c_plus_a], [m4_eval(msc_version_major + msc_version_minor
 
 m4_define([msc_version],
     [msc_version_major.msc_version_minor])
+
+m4_define([msc_version_with_patchlevel],
+    [msc_version_major.msc_version_minor.msc_version_patchlevel])
 
 m4_define([msc_version_git],
     [m4_esyscmd_s(git describe)])
@@ -69,10 +72,10 @@ test "x$HAS_LIBINJECTION" = "x" && AC_MSG_ERROR([\
 
    ])
 # Libinjection version
-AC_DEFUN([LIBINJECTION_VERSION], m4_esyscmd_s(PWD="others/libinjection" git describe))
+AC_DEFUN([LIBINJECTION_VERSION], m4_esyscmd_s(cd "others/libinjection" && git describe && cd ../..))
 
 # SecLang test version
-AC_DEFUN([SECLANG_TEST_VERSION], m4_esyscmd_s(PWD="test/test-cases/secrules-language-tests" git log -1 --format="%h" --abbrev-commit))
+AC_DEFUN([SECLANG_TEST_VERSION], m4_esyscmd_s(cd "test/test-cases/secrules-language-tests" && git log -1 --format="%h" --abbrev-commit && cd ../../..))
 
 
 # Check for yajl
@@ -201,6 +204,9 @@ AC_SUBST([MSC_BASE_DIR])
 MSC_VERSION_INFO=msc_version_info
 AC_SUBST([MSC_VERSION_INFO])
 
+MSC_VERSION_WITH_PATCHLEVEL=msc_version_with_patchlevel
+AC_SUBST([MSC_VERSION_WITH_PATCHLEVEL])
+
 MSC_VERSION=msc_version
 AC_SUBST([MSC_VERSION])
 
@@ -326,7 +332,7 @@ AM_CONDITIONAL([USE_MUTEX_ON_PM], [test $mutexPm = true])
 
 
 # General link options
-if test "$PLATFORM" != "MacOSX"; then
+if test "$PLATFORM" != "MacOSX" -a "$PLATFORM" != "OpenBSD"; then
     GLOBAL_LDADD="-lrt  "
 fi
 
@@ -346,6 +352,7 @@ AC_SUBST(GLOBAL_CFLAGS)
 
 # Files to be generated via autotools.
 AC_CONFIG_FILES([\
+    modsecurity.pc \
     Makefile \
     doc/Makefile \
     src/Makefile \
