@@ -1,8 +1,11 @@
 modsecurity (3.0.3-1) UNRELEASED; urgency=medium
 
   * New upstream version 3.0.3
+  * remove from debian/rules: Export TERM var required for test case.
+  * add upstream patch to avoid to use ENV:TERM in the regression tests
+  * add upstream patch to fix inet addr handling on 64 bit big endian systems
 
- -- Ervin Hegedus <airween@gmail.com>  Tue, 04 Dec 2018 21:58:51 +0000
+ -- Ervin Hegedus <airween@gmail.com>  Tue, 11 Dec 2018 04:55:30 +0000
 
 modsecurity (3.0.2-2) UNRELEASED; urgency=medium
 
