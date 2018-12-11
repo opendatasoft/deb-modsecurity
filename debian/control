@@ -1,7 +1,7 @@
 Source: modsecurity
 Priority: optional
 Maintainer: Alberto Gonzalez Iniesta <agi@inittab.org>
-Build-Depends: debhelper (>= 11), libyajl-dev, libgeoip-dev, libxml2-dev, libpcre3-dev, libcurl4-gnutls-dev, liblua5.3-dev, libmaxminddb-dev, libfuzzy-dev
+Build-Depends: debhelper (>= 11), libyajl-dev, libgeoip-dev, libxml2-dev, libpcre3-dev, libcurl4-gnutls-dev, liblua5.3-dev, libmaxminddb-dev, libfuzzy-dev, pkg-config
 Standards-Version: 4.2.1
 Section: libs
 Homepage: https://www.modsecurity.org/

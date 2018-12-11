@@ -4,6 +4,7 @@ modsecurity (3.0.3-1) UNRELEASED; urgency=medium
   * remove from debian/rules: Export TERM var required for test case.
   * add upstream patch to avoid to use ENV:TERM in the regression tests
   * add upstream patch to fix inet addr handling on 64 bit big endian systems
+  * add pkg-config to dependency list in d/control for make check in sbuild
 
  -- Ervin Hegedus <airween@gmail.com>  Tue, 11 Dec 2018 04:55:30 +0000
 
