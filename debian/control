@@ -4,7 +4,7 @@ Maintainer: Alberto Gonzalez Iniesta <agi@inittab.org>
 Build-Depends: debhelper (>= 11), libyajl-dev, libgeoip-dev, libxml2-dev, libpcre3-dev, libcurl4-gnutls-dev, liblua5.3-dev, libmaxminddb-dev, libfuzzy-dev, pkg-config
 Standards-Version: 4.2.1
 Section: libs
-Uploaders: Alberto Gonzalez Iniesta <agi@inittab.org>, Ervin Hegedus <airween@gmail.com>
+Uploaders: Ervin Hegedus <airween@gmail.com>
 Homepage: https://www.modsecurity.org/
 Vcs-Browser: https://salsa.debian.org/agi/modsecurity
 Vcs-Git: https://salsa.debian.org/agi/modsecurity.git
