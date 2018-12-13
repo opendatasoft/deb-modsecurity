@@ -1,3 +1,17 @@
+modsecurity (3.0.3-1) unstable; urgency=medium
+
+  [ Ervin Hegedüs ]
+  * New upstream version 3.0.3
+  * Remove from debian/rules: Export TERM var required for test case.
+  * Fix FTBFS (Closes: #911209):
+    - Add upstream patch to avoid to use ENV:TERM in the regression tests
+    - Add upstream patch to fix inet addr handling on 64 bit big endian
+      systems
+  * Add pkg-config to dependency list in d/control for make check in sbuild
+  * Add <airween@gmail.com> to Uploaders
+
+ -- Alberto Gonzalez Iniesta <agi@inittab.org>  Wed, 12 Dec 2018 08:17:40 +0100
+
 modsecurity (3.0.2-2) UNRELEASED; urgency=medium
 
   * debian/copyright: Updated with all copyrights/licenses (Closes: #911153)
