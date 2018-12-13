@@ -47,14 +47,18 @@ class Rules : public RulesProperties {
     Rules()
         : RulesProperties(new DebugLog()),
         unicode_codepage(0),
-        m_referenceCount(0),
-        m_secmarker_skipped(0) { }
+#ifndef NO_LOGS
+        m_secmarker_skipped(0),
+#endif
+        m_referenceCount(0) { }
 
     explicit Rules(DebugLog *customLog)
         : RulesProperties(customLog),
         unicode_codepage(0),
-        m_referenceCount(0),
-        m_secmarker_skipped(0) { }
+#ifndef NO_LOGS
+        m_secmarker_skipped(0),
+#endif
+        m_referenceCount(0) { }
 
     ~Rules() { }
 
@@ -74,13 +78,16 @@ class Rules : public RulesProperties {
     int evaluate(int phase, Transaction *transaction);
     std::string getParserError();
 
-    void debug(int level, std::string message);
+    void debug(int level, const std::string &id, const std::string &uri,
+        const std::string &msg);
 
     int64_t unicode_codepage;
 
  private:
     int m_referenceCount;
-    double m_secmarker_skipped;
+#ifndef NO_LOGS
+    uint8_t m_secmarker_skipped;
+#endif
 };
 
 #endif
@@ -89,7 +96,7 @@ class Rules : public RulesProperties {
 extern "C" {
 #endif
 
-Rules *msc_create_rules_set();
+Rules *msc_create_rules_set(void);
 void msc_rules_dump(Rules *rules);
 int msc_rules_merge(Rules *rules_dst, Rules *rules_from, const char **error);
 int msc_rules_add_remote(Rules *rules, const char *key, const char *uri,

@@ -21,6 +21,7 @@ class Driver;
 
 #include "src/actions/accuracy.h"
 #include "src/actions/audit_log.h"
+#include "src/actions/block.h"
 #include "src/actions/capture.h"
 #include "src/actions/chain.h"
 #include "src/actions/ctl/audit_log_parts.h"
@@ -28,13 +29,13 @@ class Driver;
 #include "src/actions/ctl/rule_engine.h"
 #include "src/actions/ctl/request_body_processor_json.h"
 #include "src/actions/ctl/request_body_processor_xml.h"
+#include "src/actions/ctl/request_body_processor_urlencoded.h"
 #include "src/actions/ctl/rule_remove_by_id.h"
 #include "src/actions/ctl/rule_remove_by_tag.h"
 #include "src/actions/ctl/rule_remove_target_by_id.h"
 #include "src/actions/ctl/rule_remove_target_by_tag.h"
 #include "src/actions/data/status.h"
 #include "src/actions/disruptive/allow.h"
-#include "src/actions/disruptive/block.h"
 #include "src/actions/disruptive/deny.h"
 #include "src/actions/disruptive/pass.h"
 #include "src/actions/disruptive/redirect.h"
@@ -50,6 +51,7 @@ class Driver;
 #include "src/actions/phase.h"
 #include "src/actions/rev.h"
 #include "src/actions/rule_id.h"
+#include "src/actions/set_env.h"
 #include "src/actions/set_rsc.h"
 #include "src/actions/set_sid.h"
 #include "src/actions/set_uid.h"
@@ -60,6 +62,7 @@ class Driver;
 #include "src/actions/tag.h"
 #include "src/actions/transformations/none.h"
 #include "src/actions/transformations/transformation.h"
+#include "src/actions/transformations/url_decode_uni.h"
 #include "src/actions/ver.h"
 #include "src/actions/xmlns.h"
 
@@ -343,7 +346,6 @@ using modsecurity::operators::Operator;
     std::unique_ptr<Variable> c(b); \
     a = std::move(c);
 
-
 }
 // The parsing context.
 %param { modsecurity::Parser::Driver& driver }
@@ -452,6 +454,7 @@ using modsecurity::operators::Operator;
 
 
   VARIABLE_STATUS                              "VARIABLE_STATUS"
+  VARIABLE_STATUS_LINE                         "VARIABLE_STATUS_LINE"
   VARIABLE_IP                                  "VARIABLE_IP"
   VARIABLE_GLOBAL                              "VARIABLE_GLOBAL"
   VARIABLE_TX                                  "VARIABLE_TX"
@@ -522,6 +525,7 @@ using modsecurity::operators::Operator;
   ACTION_CTL_AUDIT_LOG_PARTS                   "ACTION_CTL_AUDIT_LOG_PARTS"
   ACTION_CTL_BDY_JSON                          "ACTION_CTL_BDY_JSON"
   ACTION_CTL_BDY_XML                           "ACTION_CTL_BDY_XML"
+  ACTION_CTL_BDY_URLENCODED                    "ACTION_CTL_BDY_URLENCODED"
   ACTION_CTL_FORCE_REQ_BODY_VAR                "ACTION_CTL_FORCE_REQ_BODY_VAR"
   ACTION_CTL_REQUEST_BODY_ACCESS               "ACTION_CTL_REQUEST_BODY_ACCESS"
   ACTION_CTL_RULE_REMOVE_BY_ID                 "ACTION_CTL_RULE_REMOVE_BY_ID"
@@ -549,11 +553,11 @@ using modsecurity::operators::Operator;
   ACTION_PROXY                                 "Proxy"
   ACTION_REDIRECT                              "Redirect"
   ACTION_REV                                   "Rev"
-  ACTION_SANATISE_ARG                          "SanatiseArg"
-  ACTION_SANATISE_MATCHED                      "SanatiseMatched"
-  ACTION_SANATISE_MATCHED_BYTES                "SanatiseMatchedBytes"
-  ACTION_SANATISE_REQUEST_HEADER               "SanatiseRequestHeader"
-  ACTION_SANATISE_RESPONSE_HEADER              "SanatiseResponseHeader"
+  ACTION_SANITISE_ARG                          "SanitiseArg"
+  ACTION_SANITISE_MATCHED                      "SanitiseMatched"
+  ACTION_SANITISE_MATCHED_BYTES                "SanitiseMatchedBytes"
+  ACTION_SANITISE_REQUEST_HEADER               "SanitiseRequestHeader"
+  ACTION_SANITISE_RESPONSE_HEADER              "SanitiseResponseHeader"
   ACTION_SETENV                                "SetEnv"
   ACTION_SETRSC                                "SetRsc"
   ACTION_SETSID                                "SetSid"
@@ -569,6 +573,7 @@ using modsecurity::operators::Operator;
   ACTION_TRANSFORMATION_CMD_LINE               "ACTION_TRANSFORMATION_CMD_LINE"
   ACTION_TRANSFORMATION_COMPRESS_WHITESPACE    "ACTION_TRANSFORMATION_COMPRESS_WHITESPACE"
   ACTION_TRANSFORMATION_CSS_DECODE             "ACTION_TRANSFORMATION_CSS_DECODE"
+  ACTION_TRANSFORMATION_ESCAPE_SEQ_DECODE      "ACTION_TRANSFORMATION_ESCAPE_SEQ_DECODE"
   ACTION_TRANSFORMATION_HEX_ENCODE             "ACTION_TRANSFORMATION_HEX_ENCODE"
   ACTION_TRANSFORMATION_HEX_DECODE             "ACTION_TRANSFORMATION_HEX_DECODE"
   ACTION_TRANSFORMATION_HTML_ENTITY_DECODE     "ACTION_TRANSFORMATION_HTML_ENTITY_DECODE"
@@ -591,7 +596,10 @@ using modsecurity::operators::Operator;
   ACTION_TRANSFORMATION_SHA1                   "ACTION_TRANSFORMATION_SHA1"
   ACTION_TRANSFORMATION_SQL_HEX_DECODE         "ACTION_TRANSFORMATION_SQL_HEX_DECODE"
   ACTION_TRANSFORMATION_TRIM                   "ACTION_TRANSFORMATION_TRIM"
+  ACTION_TRANSFORMATION_TRIM_LEFT              "ACTION_TRANSFORMATION_TRIM_LEFT"
+  ACTION_TRANSFORMATION_TRIM_RIGHT             "ACTION_TRANSFORMATION_TRIM_RIGHT"
   ACTION_TRANSFORMATION_UPPERCASE              "ACTION_TRANSFORMATION_UPPERCASE"
+  ACTION_TRANSFORMATION_URL_ENCODE             "ACTION_TRANSFORMATION_URL_ENCODE"
   ACTION_TRANSFORMATION_URL_DECODE             "ACTION_TRANSFORMATION_URL_DECODE"
   ACTION_TRANSFORMATION_URL_DECODE_UNI         "ACTION_TRANSFORMATION_URL_DECODE_UNI"
   ACTION_TRANSFORMATION_UTF8_TO_UNICODE        "ACTION_TRANSFORMATION_UTF8_TO_UNICODE"
@@ -644,6 +652,7 @@ using modsecurity::operators::Operator;
   CONFIG_DIR_SEC_DEFAULT_ACTION                "CONFIG_DIR_SEC_DEFAULT_ACTION"
   CONFIG_DIR_SEC_MARKER                        "CONFIG_DIR_SEC_MARKER"
   CONFIG_DIR_UNICODE_MAP_FILE                  "CONFIG_DIR_UNICODE_MAP_FILE"
+  CONFIG_DIR_UNICODE_CODE_PAGE                 "CONFIG_DIR_UNICODE_CODE_PAGE"
   CONFIG_SEC_COLLECTION_TIMEOUT                "CONFIG_SEC_COLLECTION_TIMEOUT"
   CONFIG_SEC_HTTP_BLKEY                        "CONFIG_SEC_HTTP_BLKEY"
   CONFIG_SEC_INTERCEPT_ON_ERROR                "CONFIG_SEC_INTERCEPT_ON_ERROR"
@@ -718,7 +727,7 @@ using modsecurity::operators::Operator;
   op
 ;
 
-
+%type <std::unique_ptr<std::vector<std::unique_ptr<Variable> > > > variables_pre_process
 %type <std::unique_ptr<std::vector<std::unique_ptr<Variable> > > > variables_may_be_quoted
 %type <std::unique_ptr<std::vector<std::unique_ptr<Variable> > > > variables
 %type <std::unique_ptr<Variable>> var
@@ -1073,11 +1082,11 @@ op_before_init:
       }
     | OPERATOR_GEOLOOKUP
       {
-#ifdef WITH_GEOIP
+#if defined(WITH_GEOIP) or defined(WITH_MAXMIND)
         OPERATOR_CONTAINER($$, new operators::GeoLookup());
 #else
         std::stringstream ss;
-            ss << "This version of ModSecurity was not compiled with GeoIP support.";
+            ss << "This version of ModSecurity was not compiled with GeoIP or MaxMind support.";
             driver.error(@0, ss.str());
             YYERROR;
 #endif  // WITH_GEOIP
@@ -1092,7 +1101,7 @@ expression:
         for (auto &i : *$4.get()) {
             a->push_back(i.release());
         }
-        std::vector<Variable *> *v = new std::vector<Variable *>();
+        Variables::Variables *v = new Variables::Variables();
         for (auto &i : *$2.get()) {
             v->push_back(i.release());
         }
@@ -1103,8 +1112,9 @@ expression:
             /* variables */ v,
             /* actions */ a,
             /* file name */ driver.ref.back(),
-            /* line number */ @0.end.line
+            /* line number */ @1.end.line
             );
+
         if (driver.addSecRule(rule) == false) {
             delete rule;
             YYERROR;
@@ -1112,7 +1122,7 @@ expression:
       }
     | DIRECTIVE variables op
       {
-        std::vector<Variable *> *v = new std::vector<Variable *>();
+        Variables::Variables *v = new Variables::Variables();
         for (auto &i : *$2.get()) {
             v->push_back(i.release());
         }
@@ -1122,7 +1132,7 @@ expression:
             /* variables */ v,
             /* actions */ NULL,
             /* file name */ driver.ref.back(),
-            /* line number */ @0.end.line
+            /* line number */ @1.end.line
             );
         if (driver.addSecRule(rule) == false) {
             delete rule;
@@ -1140,7 +1150,7 @@ expression:
             /* variables */ NULL,
             /* actions */ a,
             /* file name */ driver.ref.back(),
-            /* line number */ @0.end.line
+            /* line number */ @1.end.line
             );
         driver.addSecAction(rule);
       }
@@ -1155,7 +1165,7 @@ expression:
             /* path to script */ $1,
             /* actions */ a,
             /* file name */ driver.ref.back(),
-            /* line number */ @0.end.line
+            /* line number */ @1.end.line
             );
 
         if (r->init(&err) == false) {
@@ -1180,7 +1190,7 @@ expression:
         int secRuleDefinedPhase = -1;
         for (actions::Action *a : *actions) {
             actions::Phase *phase = dynamic_cast<actions::Phase *>(a);
-            if (a->isDisruptive() == true && dynamic_cast<actions::disruptive::Block *>(a) == NULL) {
+            if (a->isDisruptive() == true && dynamic_cast<actions::Block *>(a) == NULL) {
                 hasDisruptive = true;
             }
             if (phase != NULL) {
@@ -1436,7 +1446,7 @@ expression:
             YYERROR;
         }
       }
-    | CONFIG_SEC_RULE_UPDATE_TARGET_BY_TAG variables
+    | CONFIG_SEC_RULE_UPDATE_TARGET_BY_TAG variables_pre_process
       {
         std::string error;
         if (driver.m_exceptions.loadUpdateTargetByTag($1, std::move($2), &error) == false) {
@@ -1449,7 +1459,7 @@ expression:
             YYERROR;
         }
       }
-    | CONFIG_SEC_RULE_UPDATE_TARGET_BY_MSG variables
+    | CONFIG_SEC_RULE_UPDATE_TARGET_BY_MSG variables_pre_process
       {
         std::string error;
         if (driver.m_exceptions.loadUpdateTargetByMsg($1, std::move($2), &error) == false) {
@@ -1462,7 +1472,7 @@ expression:
             YYERROR;
         }
       }
-    | CONFIG_SEC_RULE_UPDATE_TARGET_BY_ID variables
+    | CONFIG_SEC_RULE_UPDATE_TARGET_BY_ID variables_pre_process
       {
         std::string error;
         double ruleId;
@@ -1505,13 +1515,15 @@ expression:
         }
 
 
-        std::vector<actions::Action *> *a = new std::vector<actions::Action *>();
-        for (auto &i : *$2.get()) {
-            a->push_back(i.release());
+        if (driver.m_exceptions.loadUpdateActionById(ruleId, std::move($2), &error) == false) {
+            std::stringstream ss;
+            ss << "SecRuleUpdateActionById: failed to load:";
+            ss << $1;
+            ss << ". ";
+            ss << error;
+            driver.error(@0, ss.str());
+            YYERROR;
         }
-
-        driver.error(@0, "SecRuleUpdateActionById is not yet supported");
-        YYERROR;
       }
     /* Debug log: start */
     | CONFIG_DIR_DEBUG_LVL
@@ -1548,7 +1560,7 @@ expression:
     /* Debug log: end */
     | CONFIG_DIR_GEO_DB
       {
-#ifdef WITH_GEOIP
+#if defined(WITH_GEOIP) or defined(WITH_MAXMIND)
         std::string err;
         std::string file = modsecurity::utils::find_resource($1,
             driver.ref.back(), &err);
@@ -1568,7 +1580,7 @@ expression:
         }
 #else
         std::stringstream ss;
-        ss << "This version of ModSecurity was not compiled with GeoIP support.";
+        ss << "This version of ModSecurity was not compiled with GeoIP or MaxMind support.";
         driver.error(@0, ss.str());
         YYERROR;
 #endif  // WITH_GEOIP
@@ -1697,10 +1709,59 @@ expression:
         YYERROR;
 */
     | CONFIG_DIR_UNICODE_MAP_FILE
-/* Parser error disabled to avoid breaking default installations with modsecurity.conf-recommended
-        driver.error(@0, "SecUnicodeMapFile is not yet supported. utils::string::x2c");
-        YYERROR;
-*/
+      {
+        std::string error;
+        std::vector<std::string> param;
+        double num = 0;
+        std::string f;
+        std::string file;
+        std::string err;
+        param = utils::string::ssplit($1, ' ');
+        if (param.size() <= 1) {
+            std::stringstream ss;
+            ss << "Failed to process unicode map, missing ";
+            ss << "parameter: " << $1 << " ";
+            driver.error(@0, ss.str());
+            YYERROR;
+        }
+
+        try {
+            num = std::stod(param.back());
+        } catch (...) {
+            std::stringstream ss;
+            ss << "Failed to process unicode map, last parameter is ";
+            ss << "expected to be a number: " << param.back() << " ";
+            driver.error(@0, ss.str());
+            YYERROR;
+        }
+        param.pop_back();
+
+        while (param.size() > 0) {
+            if (f.empty()) {
+                f = param.back();
+            } else {
+                f = param.back() + " " + f;
+            }
+            param.pop_back();
+        }
+
+        file = modsecurity::utils::find_resource(f, driver.ref.back(), &err);
+        if (file.empty()) {
+            std::stringstream ss;
+            ss << "Failed to locate the unicode map file from: " << f << " ";
+            ss << err;
+            driver.error(@0, ss.str());
+            YYERROR;
+        }
+
+        ConfigUnicodeMap::loadConfig(file, num, &driver, &error);
+
+        if (!error.empty()) {
+            driver.error(@0, error);
+            YYERROR;
+        }
+
+      }
     | CONFIG_SEC_COLLECTION_TIMEOUT
       {
 /* Parser error disabled to avoid breaking default CRS installations with crs-setup.conf-recommended
@@ -1716,6 +1777,43 @@ expression:
     ;
 
 variables:
+    variables_pre_process
+      {
+        std::unique_ptr<std::vector<std::unique_ptr<Variable> > > originalList = std::move($1);
+        std::unique_ptr<std::vector<std::unique_ptr<Variable>>> newList(new std::vector<std::unique_ptr<Variable>>());
+        std::unique_ptr<std::vector<std::unique_ptr<Variable>>> newNewList(new std::vector<std::unique_ptr<Variable>>());
+        std::unique_ptr<std::vector<std::unique_ptr<Variable>>> exclusionVars(new std::vector<std::unique_ptr<Variable>>());
+        while (!originalList->empty()) {
+            std::unique_ptr<Variable> var = std::move(originalList->back());
+            originalList->pop_back();
+            if (dynamic_cast<VariableModificatorExclusion*>(var.get())) {
+                exclusionVars->push_back(std::move(var));
+            } else {
+                newList->push_back(std::move(var));
+            }
+        }
+
+        while (!newList->empty()) {
+            bool doNotAdd = false;
+            std::unique_ptr<Variable> var = std::move(newList->back());
+            newList->pop_back();
+            for (auto &i : *exclusionVars) {
+                if (*var == *i) {
+                    doNotAdd = true;
+                }
+                if (i->belongsToCollection(var.get())) {
+                    var->addsKeyExclusion(i.get());
+                }
+            }
+            if (!doNotAdd) {
+                newNewList->push_back(std::move(var));
+            }
+        }
+        $$ = std::move(newNewList);
+      }
+    ;
+
+variables_pre_process:
     variables_may_be_quoted
       {
         $$ = std::move($1);
@@ -2391,6 +2489,10 @@ var:
       {
         VARIABLE_CONTAINER($$, new Variables::Status());
       }
+    | VARIABLE_STATUS_LINE
+      {
+        VARIABLE_CONTAINER($$, new Variables::Status());
+      }
     | VARIABLE_WEB_APP_ID
       {
         VARIABLE_CONTAINER($$, new Variables::WebAppId());
@@ -2508,7 +2610,7 @@ act:
       }
     | ACTION_BLOCK
       {
-        ACTION_CONTAINER($$, new actions::disruptive::Block($1));
+        ACTION_CONTAINER($$, new actions::Block($1));
       }
     | ACTION_CAPTURE
       {
@@ -2544,6 +2646,10 @@ act:
     | ACTION_CTL_BDY_XML
       {
         ACTION_CONTAINER($$, new actions::ctl::RequestBodyProcessorXML($1));
+      }
+    | ACTION_CTL_BDY_URLENCODED
+      {
+        ACTION_CONTAINER($$, new actions::ctl::RequestBodyProcessorURLENCODED($1));
       }
     | ACTION_CTL_FORCE_REQ_BODY_VAR CONFIG_VALUE_ON
       {
@@ -2677,29 +2783,29 @@ act:
       {
         ACTION_CONTAINER($$, new actions::Rev($1));
       }
-    | ACTION_SANATISE_ARG
+    | ACTION_SANITISE_ARG
       {
-        ACTION_NOT_SUPPORTED("SanatiseArg", @0);
+        ACTION_NOT_SUPPORTED("SanitiseArg", @0);
       }
-    | ACTION_SANATISE_MATCHED
+    | ACTION_SANITISE_MATCHED
       {
-        ACTION_NOT_SUPPORTED("SanatiseMatched", @0);
+        ACTION_NOT_SUPPORTED("SanitiseMatched", @0);
       }
-    | ACTION_SANATISE_MATCHED_BYTES
+    | ACTION_SANITISE_MATCHED_BYTES
       {
-        ACTION_NOT_SUPPORTED("SanatiseMatchedBytes", @0);
+        ACTION_NOT_SUPPORTED("SanitiseMatchedBytes", @0);
       }
-    | ACTION_SANATISE_REQUEST_HEADER
+    | ACTION_SANITISE_REQUEST_HEADER
       {
-        ACTION_NOT_SUPPORTED("SanatiseRequestHeader", @0);
+        ACTION_NOT_SUPPORTED("SanitiseRequestHeader", @0);
       }
-    | ACTION_SANATISE_RESPONSE_HEADER
+    | ACTION_SANITISE_RESPONSE_HEADER
       {
-        ACTION_NOT_SUPPORTED("SanatiseResponseHeader", @0);
+        ACTION_NOT_SUPPORTED("SanitiseResponseHeader", @0);
       }
-    | ACTION_SETENV
+    | ACTION_SETENV run_time_string
       {
-        ACTION_NOT_SUPPORTED("SetEnv", @0);
+        ACTION_CONTAINER($$, new actions::SetENV(std::move($2)));
       }
     | ACTION_SETRSC run_time_string
       {
@@ -2785,6 +2891,10 @@ act:
       {
         ACTION_CONTAINER($$, new actions::transformations::Md5($1));
       }
+    | ACTION_TRANSFORMATION_ESCAPE_SEQ_DECODE 
+      {
+        ACTION_CONTAINER($$, new actions::transformations::EscapeSeqDecode($1));
+      }
     | ACTION_TRANSFORMATION_HEX_ENCODE
       {
         ACTION_CONTAINER($$, new actions::transformations::HexEncode($1));
@@ -2808,6 +2918,10 @@ act:
     | ACTION_TRANSFORMATION_URL_DECODE
       {
         ACTION_CONTAINER($$, new actions::transformations::UrlDecode($1));
+      }
+    | ACTION_TRANSFORMATION_URL_ENCODE
+      {
+        ACTION_CONTAINER($$, new actions::transformations::UrlEncode($1));
       }
     | ACTION_TRANSFORMATION_NONE
       {
@@ -2844,6 +2958,14 @@ act:
     | ACTION_TRANSFORMATION_TRIM
       {
         ACTION_CONTAINER($$, new actions::transformations::Trim($1));
+      }
+    | ACTION_TRANSFORMATION_TRIM_LEFT
+      {
+        ACTION_CONTAINER($$, new actions::transformations::TrimLeft($1));
+      }
+    | ACTION_TRANSFORMATION_TRIM_RIGHT
+      {
+        ACTION_CONTAINER($$, new actions::transformations::TrimRight($1));
       }
     | ACTION_TRANSFORMATION_NORMALISE_PATH_WIN
       {

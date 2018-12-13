@@ -17,7 +17,11 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#ifdef __OpenBSD__
+#include <glob.h>
+#else
 #include <wordexp.h>
+#endif
 #include <stdint.h>
 #include <inttypes.h>
 
@@ -178,9 +182,14 @@ std::vector<std::string> ssplit(std::string str, char delimiter) {
     std::vector<std::string> internal;
     std::stringstream ss(str);  // Turn the string into a stream.
     std::string tok;
+    ssize_t n = str.length();
+    int i = 0;
 
     while (getline(ss, tok, delimiter)) {
-        internal.push_back(tok);
+        n -= tok.length();
+        if (i > 0) n--;
+        internal.push_back(n == 1 ? tok + delimiter : tok);
+        i++;
     }
 
     return internal;

@@ -6,7 +6,7 @@ AC_DEFUN([CHECK_LUA],
 [dnl
 
 # Possible names for the lua library/package (pkg-config)
-LUA_POSSIBLE_LIB_NAMES="lua lua53 lua5.3 lua52 lua5.2"
+LUA_POSSIBLE_LIB_NAMES="luajit luajit-5.1 lua53 lua5.3 lua-5.3 lua52 lua5.2 lua-5.2 lua51 lua5.1 lua-5.1 lua"
 
 # Possible extensions for the library
 LUA_POSSIBLE_EXTENSIONS="so so0 la sl dll dylib so.0.0.0"
@@ -68,6 +68,8 @@ else
         case $LUA_PKG_VERSION in
            (5.1*) LUA_CFLAGS="-DWITH_LUA_5_1 ${LUA_CFLAGS}" ; lua_5_1=1 ;;
            (5.2*) LUA_CFLAGS="-DWITH_LUA_5_2 ${LUA_CFLAGS}" ; lua_5_2=1 ;;
+           (2.0*) LUA_CFLAGS="-DWITH_LUA_5_1 ${LUA_CFLAGS}" ; lua_5_1=1 ;;
+           (2.1*) LUA_CFLAGS="-DWITH_LUA_5_1 -DWITH_LUA_JIT_2_1 ${LUA_CFLAGS}" ; lua_5_1=1 ;;
         esac
            AC_MSG_NOTICE([LUA pkg-config version: ${LUA_PKG_VERSION}])
         fi
@@ -88,10 +90,6 @@ if test -z "${LUA_CFLAGS}"; then
        LUA_FOUND=-1
     fi
 else
-    if test "${lua_5_1}" = 1 && test "x${LUA_MANDATORY}" == "xyes" ; then
-       AC_MSG_ERROR([LUA was explicitly referenced but LUA v5.1 was found and it is not currently supported on libModSecurity. LUA_VERSION: ${LUA_VERSION}])
-       LUA_FOUND=-1
-    fi
     if test -z "${LUA_MANDATORY}" || test "x${LUA_MANDATORY}" == "xno"; then
         LUA_FOUND=1
         AC_MSG_NOTICE([using LUA ${LUA_LDADD}])
@@ -111,15 +109,6 @@ else
         AC_SUBST(LUA_CFLAGS)
         AC_SUBST(LUA_DISPLAY)
     fi
-fi
-
-if test "${lua_5_1}" = 1 ; then
-   AC_MSG_NOTICE([LUA 5.1 was found and it is not currently supported on libModSecurity. LUA_VERSION: ${LUA_VERSION}. LUA build disabled.])
-   LUA_FOUND=2
-   LUA_CFLAGS=
-   LUA_DISPLAY=
-   LUA_LDADD=
-   LUA_LDFLAGS=
 fi
 
 AC_SUBST(LUA_FOUND)
@@ -179,6 +168,12 @@ AC_DEFUN([CHECK_FOR_LUA_AT], [
     elif test -e "${path}/include/lua5.2/lua.h"; then
         lua_inc_path="${path}/include/lua5.2"
 	LUA_VERSION=502
+    elif test -e "${path}/include/lua5.1/lua.h"; then
+        lua_inc_path="${path}/include/lua5.1"
+	LUA_VERSION=501
+    elif test -e "${path}/include/luajit-2.0/lua.h"; then
+        lua_inc_path="${path}/include/luajit-2.0"
+	LUA_VERSION=501
     fi
 
     if test -n "${lua_lib_path}"; then
