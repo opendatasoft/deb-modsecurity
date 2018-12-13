@@ -461,8 +461,11 @@ TreeNode *CPTAddElement(unsigned char *ipdata, unsigned int ip_bitmask, CPTTree 
     } else {
         i_node = CPTCreateNode();
 
-        if(i_node == NULL)
+        if (i_node == NULL) {
+            free(new_node->prefix);
+            free(new_node);
             return NULL;
+        }
 
         //i_node->prefix = NULL;
         i_node->bit = test_bit;
@@ -480,6 +483,9 @@ TreeNode *CPTAddElement(unsigned char *ipdata, unsigned int ip_bitmask, CPTTree 
             i_node->netmasks = reinterpret_cast<unsigned char *>(malloc((node->count - i) * sizeof(unsigned char)));
 
             if(i_node->netmasks == NULL) {
+                free(new_node->prefix);
+                free(new_node);
+                free(i_node);
                 return NULL;
             }
 
@@ -749,7 +755,7 @@ TreeNode *CPTFindElement(unsigned char *ipdata, unsigned int ip_bitmask, CPTTree
         return node;
     }
 
-    if (memcmp(node->prefix->buffer, temp_data, bytes) == 0) {
+    if ((node->netmasks == NULL) && memcmp(node->prefix->buffer, temp_data, bytes) == 0) {
         mask = SHIFT_LEFT_MASK(8 - ip_bitmask % 8);
 
         if ((ip_bitmask % 8) == 0) {
@@ -840,16 +846,14 @@ TreeNode *TreeAddIP(const char *buffer, CPTTree *tree, int type) {
                 ptr = NULL;
                 return NULL;
             }
-
-            if(ptr != NULL) {
+            if (ptr != NULL) {
                 free(ptr);
                 ptr = NULL;
             }
-
-            if(netmask_v4 == 0) {
+            if (netmask_v4 == 0) {
                 return NULL;
             }
-            else if (netmask_v4 != NETMASK_32 && pos < strlen(ip_strv4)) {
+            else if (pos < strlen(ip_strv4)) {
                 ip_strv4[pos] = '\0';
             }
 
@@ -858,11 +862,9 @@ TreeNode *TreeAddIP(const char *buffer, CPTTree *tree, int type) {
             if (ret <= 0) {
                 return NULL;
             }
-
             ip = addr4.s_addr;
 
             tree->count++;
-
             return CPTAddElement((unsigned char *)&ip, NETMASK_32, tree, netmask_v4);
 
         case IPV6_TREE:
@@ -1061,6 +1063,9 @@ unsigned char is_netmask_v4(char *ip_strv4) {
         }
 
         cidr = atoi(mask_str);
+        if (cidr == 32) {
+            return 32;
+        }
         if ((cidr < 0) || (cidr > 32)) {
             return 0;
         }

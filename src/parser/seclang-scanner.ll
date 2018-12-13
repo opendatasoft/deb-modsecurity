@@ -88,6 +88,7 @@ ACTION_CTL_AUDIT_ENGINE                         (?i:ctl:auditEngine)
 ACTION_CTL_AUDIT_LOG_PARTS                      (?i:ctl:auditLogParts)
 ACTION_CTL_BDY_JSON                             (?i:ctl:requestBodyProcessor=JSON)
 ACTION_CTL_BDY_XML                              (?i:ctl:requestBodyProcessor=XML)
+ACTION_CTL_BDY_URLENCODED                       (?i:ctl:requestBodyProcessor=URLENCODED)
 ACTION_CTL_FORCE_REQ_BODY_VAR                   (?i:ctl:forceRequestBodyVariable)
 ACTION_CTL_REQUEST_BODY_ACCESS                  (?i:ctl:requestBodyAccess)
 ACTION_CTL_RULE_ENGINE                          (?i:ctl:ruleEngine)
@@ -116,11 +117,11 @@ ACTION_PREPEND                                  (?i:prepend)
 ACTION_PROXY                                    (?i:proxy)
 ACTION_REDIRECT                                 (?i:redirect)
 ACTION_REV                                      (?i:rev)
-ACTION_SANATISE_ARG                             (?i:sanitiseArg)
-ACTION_SANATISE_MATCHED_BYTES                   (?i:sanitiseMatchedBytes)
-ACTION_SANATISE_MATCHED                         (?i:sanitiseMatched)
-ACTION_SANATISE_REQUEST_HEADER                  (?i:sanitiseRequestHeader)
-ACTION_SANATISE_RESPONSE_HEADER                 (?i:sanitiseResponseHeader)
+ACTION_SANITISE_ARG                             (?i:sanitiseArg)
+ACTION_SANITISE_MATCHED_BYTES                   (?i:sanitiseMatchedBytes)
+ACTION_SANITISE_MATCHED                         (?i:sanitiseMatched)
+ACTION_SANITISE_REQUEST_HEADER                  (?i:sanitiseRequestHeader)
+ACTION_SANITISE_RESPONSE_HEADER                 (?i:sanitiseResponseHeader)
 ACTION_SETENV                                   (?i:setenv)
 ACTION_SETRSC                                   (?i:setrsc)
 ACTION_SETSID                                   (?i:setsid)
@@ -139,6 +140,7 @@ ACTION_TRANSFORMATION_BASE_64_DECODE            (?i:t:base64Decode)
 ACTION_TRANSFORMATION_BASE_64_DECODE_EXT        (?i:t:base64DecodeExt)
 ACTION_TRANSFORMATION_CMD_LINE                  (?i:t:cmdLine)
 ACTION_TRANSFORMATION_COMPRESS_WHITESPACE       (?i:t:compressWhitespace)
+ACTION_TRANSFORMATION_ESCAPE_SEQ_DECODE       (?i:t:escapeSeqDecode)
 ACTION_TRANSFORMATION_CSS_DECODE                (?i:t:cssDecode)
 ACTION_TRANSFORMATION_HEX_ENCODE                (?i:t:hexEncode)
 ACTION_TRANSFORMATION_HEX_DECODE                (?i:t:hexDecode)
@@ -162,7 +164,10 @@ ACTION_TRANSFORMATION_REPLACE_NULLS             (?i:t:replaceNulls)
 ACTION_TRANSFORMATION_SHA1                      (?i:t:sha1)
 ACTION_TRANSFORMATION_SQL_HEX_DECODE            (?i:t:sqlHexDecode)
 ACTION_TRANSFORMATION_TRIM                      (?i:t:trim)
+ACTION_TRANSFORMATION_TRIM_LEFT                 (?i:t:trimLeft)
+ACTION_TRANSFORMATION_TRIM_RIGHT                (?i:t:trimRight)
 ACTION_TRANSFORMATION_UPPERCASE                 (?i:t:uppercase)
+ACTION_TRANSFORMATION_URL_ENCODE                (?i:t:urlEncode)
 ACTION_TRANSFORMATION_URL_DECODE                (?i:t:urlDecode)
 ACTION_TRANSFORMATION_URL_DECODE_UNI            (?i:t:urlDecodeUni)
 ACTION_TRANSFORMATION_UTF8_TO_UNICODE           (?i:t:utf8toUnicode)
@@ -252,7 +257,8 @@ VARIABLE_RULE                             (?i:RULE)
 VARIABLE_SESSION                          (?i:(SESSION))
 VARIABLE_IP                               (?i:(IP))
 VARIABLE_USER                             (?i:(USER))
-VARIABLE_STATUS                           (?i:(STATUS[^:]))
+VARIABLE_STATUS                           (?i:(STATUS))
+VARIABLE_STATUS_LINE                      (?i:(STATUS_LINE))
 VARIABLE_TX                               (?i:TX)
 VARIABLE_WEB_APP_ID                       (?i:WEBAPPID)
 RUN_TIME_VAR_BLD                          (?i:MODSEC_BUILD)
@@ -423,6 +429,7 @@ COMMA_BUT_SCAPED                        (,)
 FREE_TEXT_QUOTE_MACRO_EXPANSION         (([^%'])|([^\\][\\][%][{])|([^\\]([\\][\\])+[\\][%][{])|[^\\][\\][']|[^\\]([\\][\\])+[\\]['])+
 FREE_TEXT_DOUBLE_QUOTE_MACRO_EXPANSION  ((([^"%])|([%][^{]))|([^\\][\\][%][{])|([^\\]([\\][\\])+[\\][%][{])|[^\\][\\]["]|[^\\]([\\][\\])+[\\]["])+
 FREE_TEXT_EQUALS_MACRO_EXPANSION        ((([^",=%])|([%][^{]))|([^\\][\\][%][{])|([^\\]([\\][\\])+[\\][%][{])|[^\\][\\][=]|[^\\]([\\][\\])+[\\][=])+
+FREE_TEXT_EQUALS_QUOTE_MACRO_EXPANSION  ((([^'",=%])|([%][^{]))|([^\\][\\][%][{])|([^\\]([\\][\\])+[\\][%][{])|[^\\][\\][=]|[^\\][\\][']|[^\\]([\\][\\])+[\\][=])+
 FREE_TEXT_COMMA_MACRO_EXPANSION         (([^%,])|([^\\][\\][%][{])|([^\\]([\\][\\])+[\\][%][{])|[^\\][\\][,]|[^\\]([\\][\\])+[\\][,])+
 FREE_TEXT_COMMA_DOUBLE_QUOTE_MACRO_EXPANSION         ((([^,"%])|([%][^{]))|([^\\][\\][%][{])|([^\\]([\\][\\])+[\\][%][{])|[^\\][\\]["]|[^\\]([\\][\\])+[\\]["])+
 
@@ -507,11 +514,11 @@ EQUALS_MINUS                            (?i:=\-)
 {ACTION_PAUSE}                                                          { return p::make_ACTION_PAUSE(yytext, *driver.loc.back()); }
 {ACTION_PREPEND}                                                        { return p::make_ACTION_PREPEND(yytext, *driver.loc.back()); }
 {ACTION_PROXY}                                                          { return p::make_ACTION_PROXY(yytext, *driver.loc.back()); }
-{ACTION_SANATISE_ARG}                                                   { return p::make_ACTION_SANATISE_ARG(yytext, *driver.loc.back()); }
-{ACTION_SANATISE_MATCHED}                                               { return p::make_ACTION_SANATISE_MATCHED(yytext, *driver.loc.back()); }
-{ACTION_SANATISE_MATCHED_BYTES}                                         { return p::make_ACTION_SANATISE_MATCHED_BYTES(yytext, *driver.loc.back()); }
-{ACTION_SANATISE_REQUEST_HEADER}                                        { return p::make_ACTION_SANATISE_REQUEST_HEADER(yytext, *driver.loc.back()); }
-{ACTION_SANATISE_RESPONSE_HEADER}                                       { return p::make_ACTION_SANATISE_RESPONSE_HEADER(yytext, *driver.loc.back()); }
+{ACTION_SANITISE_ARG}                                                   { return p::make_ACTION_SANITISE_ARG(yytext, *driver.loc.back()); }
+{ACTION_SANITISE_MATCHED}                                               { return p::make_ACTION_SANITISE_MATCHED(yytext, *driver.loc.back()); }
+{ACTION_SANITISE_MATCHED_BYTES}                                         { return p::make_ACTION_SANITISE_MATCHED_BYTES(yytext, *driver.loc.back()); }
+{ACTION_SANITISE_REQUEST_HEADER}                                        { return p::make_ACTION_SANITISE_REQUEST_HEADER(yytext, *driver.loc.back()); }
+{ACTION_SANITISE_RESPONSE_HEADER}                                       { return p::make_ACTION_SANITISE_RESPONSE_HEADER(yytext, *driver.loc.back()); }
 {ACTION_SETRSC}:                                                        { BEGIN(EXPECTING_ACTION_PREDICATE); return p::make_ACTION_SETRSC(yytext, *driver.loc.back()); }
 
 {ACTION_STATUS}                                                         { return p::make_ACTION_STATUS(yytext, *driver.loc.back()); }
@@ -523,6 +530,7 @@ EQUALS_MINUS                            (?i:=\-)
 {ACTION_CTL_AUDIT_LOG_PARTS}=[+|-]{AUDIT_PARTS}                         { return p::make_ACTION_CTL_AUDIT_LOG_PARTS(yytext, *driver.loc.back()); }
 {ACTION_CTL_BDY_JSON}                                                   { return p::make_ACTION_CTL_BDY_JSON(yytext, *driver.loc.back()); }
 {ACTION_CTL_BDY_XML}                                                    { return p::make_ACTION_CTL_BDY_XML(yytext, *driver.loc.back()); }
+{ACTION_CTL_BDY_URLENCODED}                                             { return p::make_ACTION_CTL_BDY_URLENCODED(yytext, *driver.loc.back()); }
 {ACTION_CTL_FORCE_REQ_BODY_VAR}=                                        { return p::make_ACTION_CTL_FORCE_REQ_BODY_VAR(yytext, *driver.loc.back()); }
 {ACTION_CTL_REQUEST_BODY_ACCESS}=                                       { return p::make_ACTION_CTL_REQUEST_BODY_ACCESS(yytext, *driver.loc.back()); }
 {ACTION_CTL_RULE_ENGINE}=                                               { return p::make_ACTION_CTL_RULE_ENGINE(*driver.loc.back()); }
@@ -544,10 +552,7 @@ EQUALS_MINUS                            (?i:=\-)
 {ACTION_REDIRECT}:                                                      { BEGIN(EXPECTING_ACTION_PREDICATE); return p::make_ACTION_REDIRECT(yytext, *driver.loc.back()); }
 {ACTION_REV}:'{FREE_TEXT_QUOTE_COMMA}'                                  { return p::make_ACTION_REV(yytext, *driver.loc.back()); }
 {ACTION_REV}:{FREE_TEXT_QUOTE_COMMA}                                    { return p::make_ACTION_REV(yytext, *driver.loc.back()); }
-{ACTION_SETENV}:'{VAR_FREE_TEXT_QUOTE}={VAR_FREE_TEXT_QUOTE}'           { return p::make_ACTION_SETENV(yytext, *driver.loc.back()); }
-{ACTION_SETENV}:'{VAR_FREE_TEXT_QUOTE}'                                 { return p::make_ACTION_SETENV(yytext, *driver.loc.back()); }
-{ACTION_SETENV}:{VAR_FREE_TEXT_SPACE_COMMA}                             { return p::make_ACTION_SETENV(yytext, *driver.loc.back()); }
-{ACTION_SETENV}:{VAR_FREE_TEXT_SPACE}={VAR_FREE_TEXT_SPACE_COMMA}       { return p::make_ACTION_SETENV(yytext, *driver.loc.back()); }
+{ACTION_SETENV}:                                                         { BEGIN(EXPECTING_ACTION_PREDICATE); return p::make_ACTION_SETENV(yytext, *driver.loc.back()); }
 {ACTION_SETSID}:                                                        { BEGIN(EXPECTING_ACTION_PREDICATE); return p::make_ACTION_SETSID(yytext, *driver.loc.back()); }
 {ACTION_SETUID}:                                                        { BEGIN(EXPECTING_ACTION_PREDICATE); return p::make_ACTION_SETUID(yytext, *driver.loc.back()); }
 
@@ -573,10 +578,12 @@ EQUALS_MINUS                            (?i:=\-)
 {ACTION_TRANSFORMATION_CMD_LINE}                                        { return p::make_ACTION_TRANSFORMATION_CMD_LINE(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_SHA1}                                            { return p::make_ACTION_TRANSFORMATION_SHA1(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_MD5}                                             { return p::make_ACTION_TRANSFORMATION_MD5(yytext, *driver.loc.back()); }
+{ACTION_TRANSFORMATION_ESCAPE_SEQ_DECODE}                               { return p::make_ACTION_TRANSFORMATION_ESCAPE_SEQ_DECODE(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_HEX_ENCODE}                                      { return p::make_ACTION_TRANSFORMATION_HEX_ENCODE(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_HEX_DECODE}                                      { return p::make_ACTION_TRANSFORMATION_HEX_DECODE(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_LOWERCASE}                                       { return p::make_ACTION_TRANSFORMATION_LOWERCASE(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_UPPERCASE}                                       { return p::make_ACTION_TRANSFORMATION_UPPERCASE(yytext, *driver.loc.back()); }
+{ACTION_TRANSFORMATION_URL_ENCODE}                                      { return p::make_ACTION_TRANSFORMATION_URL_ENCODE(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_URL_DECODE_UNI}                                  { return p::make_ACTION_TRANSFORMATION_URL_DECODE_UNI(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_URL_DECODE}                                      { return p::make_ACTION_TRANSFORMATION_URL_DECODE(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_NONE}                                            { return p::make_ACTION_TRANSFORMATION_NONE(yytext, *driver.loc.back()); }
@@ -588,6 +595,8 @@ EQUALS_MINUS                            (?i:=\-)
 {ACTION_TRANSFORMATION_JS_DECODE}                                       { return p::make_ACTION_TRANSFORMATION_JS_DECODE(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_CSS_DECODE}                                      { return p::make_ACTION_TRANSFORMATION_CSS_DECODE(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_TRIM}                                            { return p::make_ACTION_TRANSFORMATION_TRIM(yytext, *driver.loc.back()); }
+{ACTION_TRANSFORMATION_TRIM_LEFT}                                       { return p::make_ACTION_TRANSFORMATION_TRIM_LEFT(yytext, *driver.loc.back()); }
+{ACTION_TRANSFORMATION_TRIM_RIGHT}                                      { return p::make_ACTION_TRANSFORMATION_TRIM_RIGHT(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_NORMALISE_PATH_WIN}                              { return p::make_ACTION_TRANSFORMATION_NORMALISE_PATH_WIN(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_NORMALISE_PATH}                                  { return p::make_ACTION_TRANSFORMATION_NORMALISE_PATH(yytext, *driver.loc.back()); }
 {ACTION_TRANSFORMATION_LENGTH}                                          { return p::make_ACTION_TRANSFORMATION_LENGTH(yytext, *driver.loc.back()); }
@@ -647,8 +656,9 @@ EQUALS_MINUS                            (?i:=\-)
 }
 
 <EXPECTING_ACTION_PREDICATE_VARIABLE>{
-[}] { BEGIN_PREVIOUS(); }
-[}][%] { BEGIN_PREVIOUS(); }
+[}][%][{] { yyless(1); BEGIN_PREVIOUS(); }
+[}][%]    { BEGIN_PREVIOUS(); }
+[}]       { BEGIN_PREVIOUS(); }
 }
 
 <ACTION_PREDICATE_ENDS_WITH_QUOTE>{
@@ -709,8 +719,8 @@ EQUALS_MINUS                            (?i:=\-)
 
 
 <SETVAR_ACTION_QUOTED_WAITING_CONTENT>{
-{FREE_TEXT_EQUALS_MACRO_EXPANSION}        { return p::make_FREE_TEXT_QUOTE_MACRO_EXPANSION(yytext, *driver.loc.back()); }
 \'                        { BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+{FREE_TEXT_EQUALS_QUOTE_MACRO_EXPANSION}        { return p::make_FREE_TEXT_QUOTE_MACRO_EXPANSION(yytext, *driver.loc.back()); }
 .|\n                      { BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); yyless(0); }
 }
 
@@ -764,7 +774,7 @@ EQUALS_MINUS                            (?i:=\-)
 {CONFIG_DIR_RULE_ENG}                                                   { return p::make_CONFIG_DIR_RULE_ENG(yytext, *driver.loc.back()); }
 {CONFIG_DIR_SEC_MARKER}[ \t]+["]{NEW_LINE_FREE_TEXT}["]                 { return p::make_CONFIG_DIR_SEC_MARKER(strchr(yytext, ' ') + 1, *driver.loc.back()); }
 {CONFIG_DIR_SEC_MARKER}[ \t]+{NEW_LINE_FREE_TEXT}                       { return p::make_CONFIG_DIR_SEC_MARKER(strchr(yytext, ' ') + 1, *driver.loc.back()); }
-{CONFIG_DIR_UNICODE_MAP_FILE}[ ]{FREE_TEXT_NEW_LINE}                    { return p::make_CONFIG_DIR_UNICODE_MAP_FILE(strchr(yytext, ' ') + 1, *driver.loc.back()); }
+{CONFIG_DIR_UNICODE_MAP_FILE}[ ]+{FREE_TEXT_NEW_LINE}[ ]+{CONFIG_VALUE_NUMBER}                    { return p::make_CONFIG_DIR_UNICODE_MAP_FILE(strchr(yytext, ' ') + 1, *driver.loc.back()); }
 {CONFIG_SEC_REMOVE_RULES_BY_ID}[ ]+{FREE_TEXT_NEW_LINE}                 { return p::make_CONFIG_SEC_RULE_REMOVE_BY_ID(parserSanitizer(strchr(yytext, ' ') + 1), *driver.loc.back()); }
 {CONFIG_SEC_REMOVE_RULES_BY_MSG}[ \t]+{FREE_TEXT_NEW_LINE}              { return p::make_CONFIG_SEC_RULE_REMOVE_BY_MSG(parserSanitizer(strchr(yytext, ' ') + 1), *driver.loc.back()); }
 {CONFIG_SEC_REMOVE_RULES_BY_MSG}[ \t]+["]{FREE_TEXT_NEW_LINE}["]        { return p::make_CONFIG_SEC_RULE_REMOVE_BY_MSG(parserSanitizer(strchr(yytext, ' ') + 1), *driver.loc.back()); }
@@ -1005,6 +1015,7 @@ EQUALS_MINUS                            (?i:=\-)
 {VARIABLE_RESOURCE}                         { return p::make_VARIABLE_RESOURCE(*driver.loc.back()); }
 {VARIABLE_SESSION}                          { return p::make_VARIABLE_SESSION(*driver.loc.back()); }
 {VARIABLE_STATUS}                           { return p::make_VARIABLE_STATUS(*driver.loc.back()); }
+{VARIABLE_STATUS_LINE}                      { return p::make_VARIABLE_STATUS_LINE(*driver.loc.back()); }
 {VARIABLE_TX}                               { return p::make_VARIABLE_TX(*driver.loc.back()); }
 {VARIABLE_USER}                             { return p::make_VARIABLE_USER(*driver.loc.back()); }
 }
@@ -1027,6 +1038,7 @@ EQUALS_MINUS                            (?i:=\-)
 [\/]{DICT_ELEMENT_NO_PIPE}[\/][|]         { BEGIN_PREVIOUS(); yyless(yyleng - 1); return p::make_DICT_ELEMENT_REGEXP(std::string(yytext, 1, yyleng-2), *driver.loc.back()); }
 ['][\/]{DICT_ELEMENT_WITH_PIPE}[\/][']    { BEGIN_PREVIOUS(); yyless(yyleng - 0); return p::make_DICT_ELEMENT_REGEXP(std::string(yytext, 2, yyleng-4), *driver.loc.back()); }
 ['][\/]{DICT_ELEMENT_WITH_PIPE}[\/]['][|] { BEGIN_PREVIOUS(); yyless(yyleng - 1); return p::make_DICT_ELEMENT_REGEXP(std::string(yytext, 2, yyleng-4), *driver.loc.back()); }
+{FREE_TEXT_EQUALS_MACRO_EXPANSION}[']     { yyless(yyleng - 1); BEGIN_PREVIOUS(); return p::make_FREE_TEXT_QUOTE_MACRO_EXPANSION(yytext, *driver.loc.back()); }
 {FREE_TEXT_EQUALS_MACRO_EXPANSION}        { return p::make_FREE_TEXT_QUOTE_MACRO_EXPANSION(yytext, *driver.loc.back()); }
 
 [\/]{DICT_ELEMENT_NO_PIPE}[\/][,]         { BEGIN_PREVIOUS(); yyless(yyleng - 1); return p::make_DICT_ELEMENT_REGEXP(std::string(yytext, 1, yyleng-2), *driver.loc.back()); }
@@ -1145,19 +1157,34 @@ EQUALS_MINUS                            (?i:=\-)
 
 
 <TRANSACTION_FROM_OPERATOR_TO_ACTIONS,TRANSACTION_FROM_OPERATOR_PARAMETERS_TO_ACTIONS>{
-[ \t]*\"[ \t]*                        { BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
-[ \t]*\"[ \t]*\"[ \t]*                { BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
-[ \t]*\"[ \t]*\\\n[ \t]*\"[ \t]*      { BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
-\\\n[ \t]*\"[ \t]*                    { BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
-[ \t]*\"[ \t]*\\\r\n[ \t]*\"[ \t]*    { BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
-[ \t]*\\\n[ \t]*\"[ \t]*                      { BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
-
-[ \t]*\\\n[ \t]*                      { BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
-[ \t]*\\\r\n[ \t]*                    { BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
-
 [ ]+                                  { BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
-[ \t]*\r\n[ \t]*                      { BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
-[ \t]*\n[ \t]*                        { BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
+
+[ \t]*\\\n[ \t]*\"[ \t]*              { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+[ \t]*\n[ \t]*\"[ \t]*                { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+[ \t]*\\\n[ \t]*                      { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
+[ \t]*\n[ \t]*                        { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
+
+[ \t]*\\\r\\\n[ \t]*\"[ \t]*          { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+[ \t]*\\\r\n[ \t]*\"[ \t]*            { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+[ \t]*\r\\\n[ \t]*\"[ \t]*            { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+[ \t]*\r\n[ \t]*\"[ \t]*              { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+
+[ \t]*\\\r\\\n[ \t]*                  { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
+[ \t]*\\\r\n[ \t]*                    { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
+[ \t]*\r\\\n[ \t]*                    { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
+[ \t]*\r\n[ \t]*                      { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ONLY_ONE); }
+
+[ \t]*\"[ \t]*                        { BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+
+[ \t]*\"[ \t]*\\\n[ \t]*\"[ \t]*      { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+[ \t]*\"[ \t]*\n[ \t]*\"[ \t]*        { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+
+[ \t]*\"[ \t]*\\\r\n[ \t]*\"[ \t]*    { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+[ \t]*\"[ \t]*\\\r\\\n[ \t]*\"[ \t]*  { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+[ \t]*\"[ \t]*\r\n[ \t]*\"[ \t]*      { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+[ \t]*\"[ \t]*\r\\\n[ \t]*\"[ \t]*    { driver.loc.back()->lines(1); driver.loc.back()->step(); BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
+
+[ \t]*\"[ \t]*\"[ \t]*                { BEGIN(EXPECTING_ACTIONS_ENDS_WITH_DOUBLE_QUOTE); }
 }
 
 

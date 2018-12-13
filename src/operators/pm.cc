@@ -96,7 +96,6 @@ bool Pm::evaluate(Transaction *transaction, Rule *rule,
 #ifdef MODSEC_MUTEX_ON_PM
     pthread_mutex_unlock(&m_lock);
 #endif
-    bool capture = rule && rule->getActionsByName("capture").size() > 0;
 
     if (rc > 0 && transaction) {
         std::string match_(match);
@@ -104,13 +103,11 @@ bool Pm::evaluate(Transaction *transaction, Rule *rule,
         transaction->m_matched.push_back(match_);
     }
 
-    if (capture && transaction && rc) {
+    if (rule && rule->m_containsCaptureAction && transaction && rc) {
         transaction->m_collections.m_tx_collection->storeOrUpdateFirst("0",
             std::string(match));
-#ifndef NO_LOGS
-        transaction->debug(7, "Added pm match TX.0: " + \
+        ms_dbg_a(transaction, 7, "Added pm match TX.0: " + \
             std::string(match));
-#endif
     }
 
     return rc > 0;

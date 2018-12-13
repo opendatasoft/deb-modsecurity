@@ -78,23 +78,25 @@ int Driver::addSecRule(Rule *rule) {
     }
 
     if (lastRule && lastRule->m_chained) {
-        if (lastRule->m_chainedRule == NULL) {
+        if (lastRule->m_chainedRuleChild == NULL) {
             rule->m_phase = lastRule->m_phase;
-            lastRule->m_chainedRule = rule;
-            if (rule->containsDisruptiveAction()) {
+            if (rule->m_theDisruptiveAction) {
                 m_parserError << "Disruptive actions can only be specified by";
                 m_parserError << " chain starter rules.";
                 return false;
             }
+            lastRule->m_chainedRuleChild = rule;
+            rule->m_chainedRuleParent = lastRule;
             return true;
         } else {
-            Rule *a = lastRule->m_chainedRule;
-            while (a->m_chained && a->m_chainedRule != NULL) {
-                a = a->m_chainedRule;
+            Rule *a = lastRule->m_chainedRuleChild;
+            while (a->m_chained && a->m_chainedRuleChild != NULL) {
+                a = a->m_chainedRuleChild;
             }
-            if (a->m_chained && a->m_chainedRule == NULL) {
-                a->m_chainedRule = rule;
-                if (a->containsDisruptiveAction()) {
+            if (a->m_chained && a->m_chainedRuleChild == NULL) {
+                a->m_chainedRuleChild = rule;
+                rule->m_chainedRuleParent = a;
+                if (a->m_theDisruptiveAction) {
                     m_parserError << "Disruptive actions can only be ";
                     m_parserError << "specified by chain starter rules.";
                     return false;

@@ -138,9 +138,50 @@ Transaction::Transaction(ModSecurity *ms, Rules *rules, void *logCbData)
 
     m_variableUrlEncodedError.set("0", 0);
 
-#ifndef NO_LOGS
-    this->debug(4, "Initializing transaction");
+    ms_dbg(4, "Initializing transaction");
+
+    intervention::clean(&m_it);
+}
+
+Transaction::Transaction(ModSecurity *ms, Rules *rules, char *id, void *logCbData)
+    : m_clientPort(0),
+    m_serverPort(0),
+    m_uri_no_query_string_decoded(""),
+    m_rules(rules),
+    m_timeStamp(std::time(NULL)),
+    m_httpCodeReturned(200),
+    m_highestSeverityAction(255),
+    m_ARGScombinedSizeDouble(0),
+    m_requestBodyType(UnknownFormat),
+    m_requestBodyProcessor(UnknownFormat),
+    m_requestBodyAccess(Rules::PropertyNotSetConfigBoolean),
+    m_marker(""),
+    m_allowType(modsecurity::actions::disruptive::NoneAllowType),
+    m_skip_next(0),
+    m_creationTimeStamp(utils::cpu_seconds()),
+    m_logCbData(logCbData),
+    m_ms(ms),
+    m_secRuleEngine(RulesProperties::PropertyNotSetRuleEngine),
+    m_collections(ms->m_global_collection, ms->m_ip_collection,
+        ms->m_session_collection, ms->m_user_collection,
+        ms->m_resource_collection),
+#ifdef WITH_YAJL
+    m_json(new RequestBodyProcessor::JSON(this)),
+#else
+    m_json(NULL),
 #endif
+#ifdef WITH_LIBXML2
+    m_xml(new RequestBodyProcessor::XML(this)),
+#else
+    m_xml(NULL),
+#endif
+    TransactionAnchoredVariables(this) {
+    m_id = std::string(id);
+    m_rules->incrementReferenceCount();
+
+    m_variableUrlEncodedError.set("0", 0);
+
+    ms_dbg(4, "Initializing transaction");
 
     intervention::clean(&m_it);
 }
@@ -186,7 +227,7 @@ void Transaction::debug(int level, std::string message) const {
         return;
     }
 
-    m_rules->debug(level, message);
+    m_rules->debug(level, m_id, m_uri, message);
 }
 #endif
 
@@ -217,10 +258,9 @@ int Transaction::processConnection(const char *client, int cPort,
     this->m_serverIpAddress = server;
     this->m_clientPort = cPort;
     this->m_serverPort = sPort;
-#ifndef NO_LOGS
-    debug(4, "Transaction context created.");
-    debug(4, "Starting phase CONNECTION. (SecRules 0)");
-#endif
+    ms_dbg(4, "Transaction context created.");
+    ms_dbg(4, "Starting phase CONNECTION. (SecRules 0)");
+
 
     m_variableRemoteHost.set(m_clientIpAddress, m_variableOffset);
     m_variableUniqueID.set(m_id, m_variableOffset);
@@ -299,10 +339,8 @@ bool Transaction::extractArguments(const std::string &orig,
 
 bool Transaction::addArgument(const std::string& orig, const std::string& key,
     const std::string& value, size_t offset) {
-#ifndef NO_LOGS
-    debug(4, "Adding request argument (" + orig + "): name \"" + \
+    ms_dbg(4, "Adding request argument (" + orig + "): name \"" + \
                 key + "\", value \"" + value + "\"");
-#endif
 
     size_t k_offset = offset;
     offset = offset + key.size() + 1;
@@ -355,9 +393,7 @@ bool Transaction::addArgument(const std::string& orig, const std::string& key,
 int Transaction::processURI(const char *uri, const char *method,
     const char *http_version) {
 
-#ifndef NO_LOGS
-    debug(4, "Starting phase URI. (SecRules 0 + 1/2)");
-#endif
+    ms_dbg(4, "Starting phase URI. (SecRules 0 + 1/2)");
 
     m_httpVersion = http_version;
     m_uri = uri;
@@ -474,14 +510,10 @@ int Transaction::processURI(const char *uri, const char *method,
  *
  */
 int Transaction::processRequestHeaders() {
-#ifndef NO_LOGS
-    debug(4, "Starting phase REQUEST_HEADERS.  (SecRules 1)");
-#endif
+    ms_dbg(4, "Starting phase REQUEST_HEADERS.  (SecRules 1)");
 
     if (getRuleEngineState() == Rules::DisabledRuleEngine) {
-#ifndef NO_LOGS
-        debug(4, "Rule engine disabled, returning...");
-#endif
+        ms_dbg(4, "Rule engine disabled, returning...");
         return true;
     }
 
@@ -647,14 +679,10 @@ int Transaction::addRequestHeader(const unsigned char *key, size_t key_n,
  *
  */
 int Transaction::processRequestBody() {
-#ifndef NO_LOGS
-    debug(4, "Starting phase REQUEST_BODY. (SecRules 2)");
-#endif
+    ms_dbg(4, "Starting phase REQUEST_BODY. (SecRules 2)");
 
     if (getRuleEngineState() == RulesProperties::DisabledRuleEngine) {
-#ifndef NO_LOGS
-        debug(4, "Rule engine disabled, returning...");
-#endif
+        ms_dbg(4, "Rule engine disabled, returning...");
         return true;
     }
 
@@ -766,34 +794,23 @@ int Transaction::processRequestBody() {
         m_variableReqbodyProcessorError.set("0", m_variableOffset);
     }
 
-#if 1
-    if (m_rules->m_secRequestBodyAccess != RulesProperties::TrueConfigBoolean) {
+    if (m_rules->m_secRequestBodyAccess == RulesProperties::FalseConfigBoolean) {
         if (m_requestBodyAccess != RulesProperties::TrueConfigBoolean) {
-#ifndef NO_LOGS
-            debug(4, "Request body processing is disabled");
-#endif
-
-            this->m_rules->evaluate(modsecurity::RequestBodyPhase, this);
+            ms_dbg(4, "Request body processing is disabled");
             return true;
         } else {
-#ifndef NO_LOGS
-            debug(4, "Request body processing is disabled, but " \
+            ms_dbg(4, "Request body processing is disabled, but " \
                 "enabled to this transaction due to ctl:requestBodyAccess " \
                 "action");
-#endif
         }
     } else {
         if (m_requestBodyAccess == RulesProperties::FalseConfigBoolean) {
-#ifndef NO_LOGS
-            debug(4, "Request body processing is enabled, but " \
-                "disable to this transaction due to ctl:requestBodyAccess " \
+            ms_dbg(4, "Request body processing is enabled, but " \
+                "disabled to this transaction due to ctl:requestBodyAccess " \
                 "action");
-#endif
-            this->m_rules->evaluate(modsecurity::RequestBodyPhase, this);
             return true;
         }
     }
-#endif
 
     /**
      * FIXME: This variable should be calculated on demand, it is
@@ -856,9 +873,7 @@ int Transaction::requestBodyFromFile(const char *path) {
     std::string str;
 
     if (request_body.is_open() == false) {
-#ifndef NO_LOGS
-        debug(3, "Failed to open request body at: " + std::string(path));
-#endif
+        ms_dbg(3, "Failed to open request body at: " + std::string(path));
         return false;
     }
 
@@ -866,9 +881,7 @@ int Transaction::requestBodyFromFile(const char *path) {
     try {
         str.reserve(request_body.tellg());
     } catch (...) {
-#ifndef NO_LOGS
-        debug(3, "Failed to allocate memory to load request body.");
-#endif
+        ms_dbg(3, "Failed to allocate memory to load request body.");
         return false;
     }
     request_body.seekg(0, std::ios::beg);
@@ -878,11 +891,9 @@ int Transaction::requestBodyFromFile(const char *path) {
     const char *buf = str.c_str();
     int len = request_body.tellg();
 
-#ifndef NO_LOGS
-    debug(9, "Adding request body: " + std::to_string(len) + " bytes. " \
+    ms_dbg(9, "Adding request body: " + std::to_string(len) + " bytes. " \
         "Limit set to: "
         + std::to_string(this->m_rules->m_requestBodyLimit.m_value));
-#endif
 
     return appendRequestBody(reinterpret_cast<const unsigned char*>(buf), len);
 }
@@ -890,35 +901,28 @@ int Transaction::requestBodyFromFile(const char *path) {
 int Transaction::appendRequestBody(const unsigned char *buf, size_t len) {
     int current_size = this->m_requestBody.tellp();
 
-#ifndef NO_LOGS
-    debug(9, "Appending request body: " + std::to_string(len) + " bytes. " \
+    ms_dbg(9, "Appending request body: " + std::to_string(len) + " bytes. " \
         "Limit set to: "
         + std::to_string(this->m_rules->m_requestBodyLimit.m_value));
-#endif
 
     if (this->m_rules->m_requestBodyLimit.m_value > 0
         && this->m_rules->m_requestBodyLimit.m_value < len + current_size) {
         m_variableInboundDataError.set("1", m_variableOffset);
-#ifndef NO_LOGS
-        debug(5, "Request body is bigger than the maximum expected.");
-#endif
+        ms_dbg(5, "Request body is bigger than the maximum expected.");
+
         if (this->m_rules->m_requestBodyLimitAction ==
             Rules::BodyLimitAction::ProcessPartialBodyLimitAction) {
             size_t spaceLeft = this->m_rules->m_requestBodyLimit.m_value
                 - current_size;
             this->m_requestBody.write(reinterpret_cast<const char*>(buf),
                 spaceLeft);
-#ifndef NO_LOGS
-            debug(5, "Request body limit is marked to process partial");
-#endif
+            ms_dbg(5, "Request body limit is marked to process partial");
             return false;
         } else {
             if (this->m_rules->m_requestBodyLimitAction ==
                 Rules::BodyLimitAction::RejectBodyLimitAction) {
-#ifndef NO_LOGS
-                debug(5, "Request body limit is marked to reject the " \
+                ms_dbg(5, "Request body limit is marked to reject the " \
                     "request");
-#endif
                 intervention::free(&m_it);
                 m_it.log = strdup("Request body limit is marked to " \
                         "reject the request");
@@ -953,18 +957,14 @@ int Transaction::appendRequestBody(const unsigned char *buf, size_t len) {
  *
  */
 int Transaction::processResponseHeaders(int code, const std::string& proto) {
-#ifndef NO_LOGS
-    debug(4, "Starting phase RESPONSE_HEADERS. (SecRules 3)");
-#endif
+    ms_dbg(4, "Starting phase RESPONSE_HEADERS. (SecRules 3)");
 
     this->m_httpCodeReturned = code;
     m_variableResponseStatus.set(std::to_string(code), m_variableOffset);
     m_variableResponseProtocol.set(proto, m_variableOffset);
 
     if (getRuleEngineState() == Rules::DisabledRuleEngine) {
-#ifndef NO_LOGS
-        debug(4, "Rule engine disabled, returning...");
-#endif
+        ms_dbg(4, "Rule engine disabled, returning...");
         return true;
     }
 
@@ -1082,14 +1082,15 @@ int Transaction::addResponseHeader(const unsigned char *key, size_t key_n,
  *
  */
 int Transaction::processResponseBody() {
-#ifndef NO_LOGS
-    debug(4, "Starting phase RESPONSE_BODY. (SecRules 4)");
-#endif
+    ms_dbg(4, "Starting phase RESPONSE_BODY. (SecRules 4)");
 
     if (getRuleEngineState() == Rules::DisabledRuleEngine) {
-#ifndef NO_LOGS
-        debug(4, "Rule engine disabled, returning...");
-#endif
+        ms_dbg(4, "Rule engine disabled, returning...");
+        return true;
+    }
+
+    if (m_rules->m_secResponseBodyAccess != RulesProperties::TrueConfigBoolean) {
+        ms_dbg(4, "Response body is disabled, returning... " + std::to_string(m_rules->m_secResponseBodyAccess));
         return true;
     }
 
@@ -1098,8 +1099,7 @@ int Transaction::processResponseBody() {
     auto t = bi.find(m_variableResponseContentType.m_value);
     if (t == bi.end()
         && m_rules->m_responseBodyTypeToBeInspected.m_set == true) {
-#ifndef NO_LOGS
-        debug(5, "Response Content-Type is " \
+        ms_dbg(5, "Response Content-Type is " \
             + m_variableResponseContentType.m_value \
             + ". It is not marked to be inspected.");
         std::string validContetTypes("");
@@ -1107,9 +1107,8 @@ int Transaction::processResponseBody() {
              i != bi.end(); i++) {
             validContetTypes.append(*i + " ");
         }
-        debug(8, "Content-Type(s) marked to be inspected: " \
+        ms_dbg(8, "Content-Type(s) marked to be inspected: " \
             + validContetTypes);
-#endif
         return true;
     }
     if (m_variableOutboundDataError.m_value.empty() == true) {
@@ -1150,44 +1149,34 @@ int Transaction::appendResponseBody(const unsigned char *buf, size_t len) {
         this->m_rules->m_responseBodyTypeToBeInspected.m_value;
     auto t = bi.find(m_variableResponseContentType.m_value);
     if (t == bi.end() && bi.empty() == false) {
-#ifndef NO_LOGS
-        debug(4, "Not appending response body. " \
+        ms_dbg(4, "Not appending response body. " \
             "Response Content-Type is " \
             + m_variableResponseContentType.m_value \
             + ". It is not marked to be inspected.");
-#endif
         return true;
     }
 
-#ifndef NO_LOGS
-    debug(9, "Appending response body: " + std::to_string(len + current_size)
+    ms_dbg(9, "Appending response body: " + std::to_string(len + current_size)
         + " bytes. Limit set to: " +
         std::to_string(this->m_rules->m_responseBodyLimit.m_value));
-#endif
 
     if (this->m_rules->m_responseBodyLimit.m_value > 0
         && this->m_rules->m_responseBodyLimit.m_value < len + current_size) {
         m_variableOutboundDataError.set("1", m_variableOffset);
-#ifndef NO_LOGS
-        debug(5, "Response body is bigger than the maximum expected.");
-#endif
+        ms_dbg(5, "Response body is bigger than the maximum expected.");
         if (this->m_rules->m_responseBodyLimitAction ==
             Rules::BodyLimitAction::ProcessPartialBodyLimitAction) {
             size_t spaceLeft = this->m_rules->m_responseBodyLimit.m_value \
                 - current_size;
             this->m_responseBody.write(reinterpret_cast<const char*>(buf),
                 spaceLeft);
-#ifndef NO_LOGS
-            debug(5, "Response body limit is marked to process partial");
-#endif
+            ms_dbg(5, "Response body limit is marked to process partial");
             return false;
         } else {
             if (this->m_rules->m_responseBodyLimitAction ==
                 Rules::BodyLimitAction::RejectBodyLimitAction) {
-#ifndef NO_LOGS
-                debug(5, "Response body limit is marked to reject the " \
+                ms_dbg(5, "Response body limit is marked to reject the " \
                     "request");
-#endif
                 intervention::free(&m_it);
                 m_it.log = strdup("Response body limit is marked to reject " \
                     "the request");
@@ -1276,14 +1265,10 @@ size_t Transaction::getRequestBodyLength() {
  *
  */
 int Transaction::processLogging() {
-#ifndef NO_LOGS
-    debug(4, "Starting phase LOGGING. (SecRules 5)");
-#endif
+    ms_dbg(4, "Starting phase LOGGING. (SecRules 5)");
 
     if (getRuleEngineState() == Rules::DisabledRuleEngine) {
-#ifndef NO_LOGS
-        debug(4, "Rule engine disabled, returning...");
-#endif
+        ms_dbg(4, "Rule engine disabled, returning...");
         return true;
     }
 
@@ -1292,20 +1277,14 @@ int Transaction::processLogging() {
     /* If relevant, save this transaction information at the audit_logs */
     if (m_rules != NULL && m_rules->m_auditLog != NULL) {
         int parts = this->m_rules->m_auditLog->getParts();
-#ifndef NO_LOGS
-        debug(8, "Checking if this request is suitable to be " \
+        ms_dbg(8, "Checking if this request is suitable to be " \
             "saved as an audit log.");
-#endif
 
         if (this->m_auditLogModifier.size() > 0) {
-#ifndef NO_LOGS
-            debug(4, "There was an audit log modifier for this transaction.");
-#endif
+            ms_dbg(4, "There was an audit log modifier for this transaction.");
             std::list<std::pair<int, std::string>>::iterator it;
-#ifndef NO_LOGS
-            debug(7, "AuditLog parts before modification(s): " +
+            ms_dbg(7, "AuditLog parts before modification(s): " +
                 std::to_string(parts) + ".");
-#endif
             for (it = m_auditLogModifier.begin();
                 it != m_auditLogModifier.end(); ++it) {
                 std::pair <int, std::string> p = *it;
@@ -1318,16 +1297,12 @@ int Transaction::processLogging() {
                 }
             }
         }
-#ifndef NO_LOGS
-        debug(8, "Checking if this request is relevant to be " \
+        ms_dbg(8, "Checking if this request is relevant to be " \
             "part of the audit logs.");
-#endif
         bool saved = this->m_rules->m_auditLog->saveIfRelevant(this, parts);
         if (saved) {
-#ifndef NO_LOGS
-            debug(8, "Request was relevant to be saved. Parts: " +
+            ms_dbg(8, "Request was relevant to be saved. Parts: " +
                 std::to_string(parts));
-#endif
         }
     }
 
@@ -1396,7 +1371,7 @@ std::string Transaction::toOldAuditLogFormatIndex(const std::string &filename,
     //ss << utils::string::dash_if_empty(
     //    this->m_collections.resolveFirst("LOCAL_USER").get());
     //ss << " ";
-    //ss << tstr << " ";
+    ss << tstr << " ";
 
     ss << "\"";
     ss << utils::string::dash_if_empty(m_variableRequestMethod.evaluate());
@@ -1567,7 +1542,7 @@ std::string Transaction::toJSON(int parts) {
     LOGFY_ADD_NUM("client_port", m_clientPort);
     LOGFY_ADD("host_ip", m_serverIpAddress.c_str());
     LOGFY_ADD_NUM("host_port", m_serverPort);
-    LOGFY_ADD("id", this->m_id.c_str());
+    LOGFY_ADD("unique_id", this->m_id.c_str());
 
     /* request */
     yajl_gen_string(g, reinterpret_cast<const unsigned char*>("request"),
@@ -1793,7 +1768,10 @@ extern "C" Transaction *msc_new_transaction(ModSecurity *ms,
     Rules *rules, void *logCbData) {
     return new Transaction(ms, rules, logCbData);
 }
-
+extern "C" Transaction *msc_new_transaction_with_id(ModSecurity *ms,
+    Rules *rules, char *id, void *logCbData) {
+    return new Transaction(ms, rules, id, logCbData);
+}
 
 /**
  * @name    msc_process_connection

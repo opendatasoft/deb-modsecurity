@@ -1,3 +1,143 @@
+v3.0.3 - 2018-Nov-05
+--------------------
+
+ - Fix double macros bug
+   [Issue #1943 - @supplient, @zimmerle]
+ - Override the default status code if not suitable to redirect action
+   [Issue #1850 - @zimmerle, @victorhora]
+ - parser: Fix the support for CRLF configuration files
+   [Issue #1945 - @zimmerle, @defanator, @kjakub]
+ - Organizes the server logs
+   [0xb7c36 and 0x5ac20 - @zimmerle]
+ - m_lineNumber in Rule not mapping with the correct line number in file
+   [Issue #1844 - @zimmerle, @victorhora, @xizeng]
+ - Using shared_ptr instead of unique_ptr on rules exceptions
+   [Issue #1697 - @zimmerle, @brianp9906, @victorhora, @LeSwiss, @defanator]
+ - Changes debuglogs schema to avoid unecessary str allocation
+   [0xb2840 - @zimmerle]
+ - Fix the SecUnicodeMapFile and SecUnicodeCodePage
+   [0x3094d - @zimmerle, @victorhora]
+ - Changes the timing to save the rule message
+   [0xca270 - @zimmerle]
+ - Fix crash in msc_rules_add_file() when using disruptive action in chain
+   [Issue #1849 - @victorhora, @zimmerle, @rperper]
+ - Fix memory leak in AuditLog::init()
+   [Issue #1897 - @weliu]
+ - Fix RulesProperties::appendRules()
+   [Issue #1901 - @steven-j-wojcik]
+ - Fix RULE lookup in chained rules
+   [0x3077c - @zimmerle]
+ - @ipMatch "Could not add entry" on slash/32 notation in 2.9.0
+   [Issue #849 - @zimmerle, @dune73]
+ - Using values after transformation at MATCHED_VARS
+   [0x14316 - @zimmerle]
+ - Adds support to UpdateActionById.
+   [Issue #1800 - @zimmerle, @victorhora, @NisariAIT]
+ - Add correct C function prototypes for msc_init and msc_create_rule_set
+   [Issue #1922 - @steven-j-wojcik]
+ - Allow LuaJIT 2.1 to be used
+   [Issue #1909 - @victorhora, @mdunc]
+ - Match m_id JSON log with RuleMessage and v2 format
+   [Issue #1185 - @victorhora]
+ - Adds support to setenv action.
+   [Issue #1044 - @zimmerle]
+ - Adds new transaction constructor that accepts the transaction id
+   as parameter.
+   [Issue #1627 - @defanator, @zimmerle]
+ - Adds request IDs and URIs to the debug log
+   [Issue #1627 - @defanator, @zimmerle]
+ - Treating variables exception on load-time instead of run time.
+   [0x028e0 and 0x275a1 - @zimmerle]
+ - Fix: function m.setvar in Lua scripts and add testcases
+   [Issue #1859 - @nowaits, @victorhora]
+ - Fix SecResponseBodyAccess and ctl:requestBodyAccess directives
+   [Issue #1531 - @victorhora, @defanator]
+ - Fix OpenBSD build
+   [Issue #1841 - @victorhora, @zimmerle, @juanfra684]
+ - Fix parser to support GeoLookup with MaxMind
+   [Issue #1884, #1895 - @victorhora, @everping]
+ - parser: Fix simple quote setvar in the end of the line
+   [Issue #1831 - @zimmerle, @csanders-git]
+ - Fix pc file
+   [Issue #1847 - @gquintard]
+ - modsec_rules_check: uses the gnu `.la' instead of `.a' file
+   [Issue #1853 - @ste7677, @victorhora, @zimmerle]
+ - good practices: Initialize variables before use it
+   [Issue #1889 - Marc Stern]
+ - Fix utf-8 character encoding conversion
+   [Issue #1794 - @tinselcity, @zimmerle]
+ - Adds support for ctl:requestBodyProcessor=URLENCODED
+   [Issue #1797 - @victorhora]
+ - Add LUA compatibility for CentOS and try to use LuaJIT first if available
+   [Issue #1622 - @victorhora, @dmitryzykov]
+ - Allow LuaJIT to be used
+   [Issue #1809 - @victorhora, @p0pr0ck5]
+ - Implement support for Lua 5.1
+   [Issue #1809 - @p0pr0ck5, @victorhora]
+ - Variable names must match fully, not partially. Match should be case
+   insensitive.
+   [Issue #1818, #1820, #1810, #1808 - @michaelgranzow-avi, @victorhora,
+                                       @theMiddleBlue, @airween, @zimmerle,
+                                       @LeeShan87]
+ - Improves the performance while loading the rules
+   [Issue #1735 - @zimmerle, @p0pr0ck5, @victorhora]
+ - Allow empty strings to be evaluated by regex::searchAll
+   [Issue #1799, #1785 - @victorhora, @XuanHuyDuong, @zimmerle]
+ - Adds basic pkg-config info
+   [Issue #1790 - @gquintard, @zimmerle]
+ - Fixed LMDB collection errors
+   [Issue #1787 - @airween, @zimmerle]
+ - Fixed false positive MULTIPART_UNMATCHED_BOUNDARY errors
+   [Issue #1747, #1924 - @airween, @victorhora, @defanator, @zimmerle]
+ - Fix ip tree lookup on netmask content
+   [Issue #1793 - @tinselcity, @zimmerle]
+ - Changes the behavior of the default sec actions
+   [Issue #1629 - @mirkodziadzka-avi, @zimmerle, @victorhora]
+ - Refactoring on {global,ip,resources,session,tx,user} collections
+   [Issue #1754, #1778 - @LeeShan87, @zimmerle, @victorhora, @wwd5613,
+                         @sobigboy]
+ - Fix race condition in UniqueId::uniqueId()
+   [Issue #1786 - @weliu]
+ - Fix memory leak in error message for msc_rules_merge C APIs
+   [Issue #1765 - @weliu]
+ - Return false in SharedFiles::open() when an error happens
+   [Issue #1783 - @weliu]
+ - Use rvalue reference in ModSecurity::serverLog
+   [Issue #1769 - @weliu]
+ - Build System: Fix when multiple lines for curl version.
+   [Issue #1771 - @Artistan]
+ - Checks if response body inspection is enabled before process it
+   [Issue #1643 - @zoltan-fedor, @dennus, @defanator, @zimmerle]
+ - Code Cleanup.
+   [Issue #1757, #1755, #1756, #1761 - @p0pr0ck5]
+ - Fix setvar parsing of quoted data
+   [Issue #1733, #1759, #1775 - @victorhora, @JaiHarpalani, @defanator]
+ - Fix LDFLAGS for unit tests.
+   [Issue #1758 - @smlx]
+ - Adds time stamp back to the audit logs
+   [Issue #1762 - @Pjack, @zimmerle]
+ - Disables skip counter if debug log is disabled
+   [@zimmerle]
+ - Cosmetics: Represents amount of skipped rules without decimal
+   [Issue #1737 - @p0pr0ck5]
+ - Add missing escapeSeqDecode, urlEncode and trimLeft/Right tfns to parser
+   [Issue #1752 - @victorhora]
+ - Fix STATUS var parsing and accept STATUS_LINE var for v2 backward comp.
+   [Issue #1738 - @victorhora]
+ - Fix memory leak in modsecurity::utils::expandEnv()
+   [Issue #1750 - @defanator]
+ - Initialize m_dtd member in ValidateDTD class as NULL
+   [Issue #1751 - @airween]
+ - Fix broken @detectxss operator regression test case
+   [Issue #1739 - @p0pr0ck5]
+ - Fix utils::string::ssplit() to handle delimiter in the end of string
+   [Issue #1743, #1744 - @defanator]
+ - Fix variable FILES_TMPNAMES 
+   [Issue #1646, #1610 - @victorhora, @zimmerle, @defanator]
+ - Fix memory leak in Collections
+   [Issue #1729, #1730 - @defanator]
+
+
 v3.0.2 - 2018-Apr-03
 --------------------
 
