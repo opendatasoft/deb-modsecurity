@@ -1,3 +1,9 @@
+modsecurity (3.0.3-1ods1) stretch; urgency=medium
+
+  * rebuild for stretch at opendatasoft
+
+ -- Kevin Roy <kiniou@gmail.com>  Tue, 18 Dec 2018 15:57:50 +0100
+
 modsecurity (3.0.3-1) unstable; urgency=medium
 
   [ Ervin Hegedüs ]
