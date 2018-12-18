@@ -40,13 +40,37 @@ typedef struct Transaction_t Transaction;
 typedef struct Rules_t Rules;
 #endif
 
-#include "anchored_set_variable.h"
-#include "anchored_variable.h"
+#include "modsecurity/anchored_set_variable.h"
+#include "modsecurity/anchored_variable.h"
 #include "modsecurity/intervention.h"
 #include "modsecurity/collection/collections.h"
 #include "modsecurity/variable_value.h"
 #include "modsecurity/collection/collection.h"
 #include "modsecurity/variable_origin.h"
+
+#ifndef NO_LOGS
+#define ms_dbg(b, c) \
+  do { \
+      if (m_rules && m_rules->m_debugLog && m_rules->m_debugLog->m_debugLevel >= b) { \
+          m_rules->debug(b, m_id, m_uri, c); \
+      } \
+  } while (0);
+#else
+#define ms_dbg(b, c) \
+  do { } while (0);
+#endif
+
+#ifndef NO_LOGS
+#define ms_dbg_a(t, b, c) \
+  do { \
+      if (t && t->m_rules && t->m_rules->m_debugLog && t->m_rules->m_debugLog->m_debugLevel >= b) { \
+          t->debug(b, c); \
+      } \
+  } while (0);
+#else
+#define ms_dbg_a(t, b, c) \
+    do { } while (0);
+#endif
 
 
 #define LOGFY_ADD(a, b) \
@@ -174,7 +198,6 @@ class TransactionAnchoredVariables {
         m_variableResponseHeaders(t, "RESPONSE_HEADERS"),
         m_variableGeo(t, "GEO"),
         m_variableRequestCookiesNames(t, "REQUEST_COOKIES_NAMES"),
-        m_variableRule(t, "RULE"),
         m_variableFilesTmpNames(t, "FILES_TMPNAMES"),
         m_variableOffset(0)
         { }
@@ -256,7 +279,6 @@ class TransactionAnchoredVariables {
     AnchoredSetVariable m_variableResponseHeaders;
     AnchoredSetVariable m_variableGeo;
     AnchoredSetVariable m_variableRequestCookiesNames;
-    AnchoredSetVariable m_variableRule;
     AnchoredSetVariable m_variableFilesTmpNames;
 
     int m_variableOffset;
@@ -267,6 +289,8 @@ class TransactionAnchoredVariables {
 class Transaction : public TransactionAnchoredVariables {
  public:
     Transaction(ModSecurity *transaction, Rules *rules, void *logCbData);
+    Transaction(ModSecurity *transaction, Rules *rules, char *id,
+        void *logCbData);
     ~Transaction();
 
     /** TODO: Should be an structure that fits an IP address */
@@ -576,6 +600,10 @@ extern "C" {
 /** @ingroup ModSecurity_C_API */
 Transaction *msc_new_transaction(ModSecurity *ms,
     Rules *rules, void *logCbData);
+
+/** @ingroup ModSecurity_C_API */
+Transaction *msc_new_transaction_with_id(ModSecurity *ms,
+    Rules *rules, char *id, void *logCbData);
 
 /** @ingroup ModSecurity_C_API */
 int msc_process_connection(Transaction *transaction,
