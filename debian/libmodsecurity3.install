@@ -1,2 +1,3 @@
 usr/lib/*/lib*.so.*
 usr/lib/*/libexec/modsec-rules-check
+unicode.mapping usr/share/modsecurity
