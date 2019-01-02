@@ -1,3 +1,10 @@
+modsecurity (3.0.3-2) unstable; urgency=medium
+
+  [ Kevin Roy ]
+  * [d/install] added unicode.mapping in /usr/share
+
+ -- Kevin Roy <kiniou@gmail.com>  Wed, 02 Jan 2019 19:01:42 +0100
+
 modsecurity (3.0.3-1) unstable; urgency=medium
 
   [ Ervin Hegedüs ]
