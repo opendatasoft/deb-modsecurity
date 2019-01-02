@@ -1,14 +1,9 @@
-modsecurity (3.0.3-1ods2) stretch; urgency=medium
+modsecurity (3.0.3-2) unstable; urgency=medium
 
+  [ Kevin Roy ]
   * [d/install] added unicode.mapping in /usr/share
 
- -- Kevin Roy <kiniou@gmail.com>  Wed, 02 Jan 2019 18:56:17 +0100
-
-modsecurity (3.0.3-1ods1) stretch; urgency=medium
-
-  * rebuild for stretch at opendatasoft
-
- -- Kevin Roy <kiniou@gmail.com>  Tue, 18 Dec 2018 15:57:50 +0100
+ -- Kevin Roy <kiniou@gmail.com>  Wed, 02 Jan 2019 19:01:42 +0100
 
 modsecurity (3.0.3-1) unstable; urgency=medium
 
