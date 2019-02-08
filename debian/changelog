@@ -1,3 +1,10 @@
+modsecurity (3.0.3-2ods.debian2) stretch; urgency=medium
+
+  * debian/patches:
+    - Update source with current 3.0.4 commits 
+
+ -- Kevin Roy <kiniou@gmail.com>  Wed, 02 Jan 2019 19:06:50 +0100
+
 modsecurity (3.0.3-2ods.debian1) stretch; urgency=medium
 
   * Rebuild for stretch at opendatasoft
