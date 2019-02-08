@@ -1,11 +1,17 @@
-Description: Disable tests requiring external networking
-Author: Alberto Gonzalez Iniesta <agi@inittab.org>
-Forwarded: not-needed
+From: Alberto Gonzalez Iniesta <agi@inittab.org>
+Date: Fri, 8 Feb 2019 13:12:04 +0100
+Subject: Disable tests requiring external networking
 
-Index: modsecurity/test/test-cases/regression/config-secremoterules.json
-===================================================================
---- modsecurity.orig/test/test-cases/regression/config-secremoterules.json	2018-11-01 19:27:28.137759232 +0100
-+++ modsecurity/test/test-cases/regression/config-secremoterules.json	2018-11-19 17:00:20.679158027 +0100
+Forwarded: not-needed
+---
+ test/test-cases/regression/config-secremoterules.json    | 6 +++---
+ test/test-cases/regression/operator-ipMatchFromFile.json | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/test/test-cases/regression/config-secremoterules.json b/test/test-cases/regression/config-secremoterules.json
+index 353df22..c1750e7 100644
+--- a/test/test-cases/regression/config-secremoterules.json
++++ b/test/test-cases/regression/config-secremoterules.json
 @@ -1,6 +1,6 @@
  [
    {
@@ -32,10 +38,10 @@ Index: modsecurity/test/test-cases/regression/config-secremoterules.json
      "resource": "curl",
      "version_min":300000,
      "title":"Include remote rules - failed download (Warn)",
-Index: modsecurity/test/test-cases/regression/operator-ipMatchFromFile.json
-===================================================================
---- modsecurity.orig/test/test-cases/regression/operator-ipMatchFromFile.json	2018-11-01 19:27:28.141759256 +0100
-+++ modsecurity/test/test-cases/regression/operator-ipMatchFromFile.json	2018-11-19 17:00:39.899395209 +0100
+diff --git a/test/test-cases/regression/operator-ipMatchFromFile.json b/test/test-cases/regression/operator-ipMatchFromFile.json
+index 3b6950f..3e5a26e 100644
+--- a/test/test-cases/regression/operator-ipMatchFromFile.json
++++ b/test/test-cases/regression/operator-ipMatchFromFile.json
 @@ -88,7 +88,7 @@
      ]
    },

@@ -1,16 +1,18 @@
-Description: Fix inet addr handling on 64 bit big endian systems
- On bigendian systems the IP address related tests had failed. This
- patch made for the Debian, and merged to upstream.
-Author: Ervin Hegedus <airween@gmail.com>
+From: Ervin Hegedus <airween@gmail.com>
+Date: Fri, 8 Feb 2019 13:12:04 +0100
+Subject: Fix inet addr handling on 64 bit big endian systems
 
+On bigendian systems the IP address related tests had failed. This
+patch made for the Debian, and merged to upstream.
 ---
-Origin: upstream, https://github.com/SpiderLabs/ModSecurity/commit/a9e9da8694cc1328f0b262272ebb2b5e55b3d97d
-Bug: https://github.com/SpiderLabs/ModSecurity/issues/1980
-Last-Update: 2018-12-11
+ src/utils/msc_tree.cc | 21 ++++++++++-----------
+ 1 file changed, 10 insertions(+), 11 deletions(-)
 
---- modsecurity-3.0.3.orig/src/utils/msc_tree.cc
-+++ modsecurity-3.0.3/src/utils/msc_tree.cc
-@@ -832,7 +832,7 @@ TreeNode *TreeAddIP(const char *buffer,
+diff --git a/src/utils/msc_tree.cc b/src/utils/msc_tree.cc
+index 59775f6..2481224 100644
+--- a/src/utils/msc_tree.cc
++++ b/src/utils/msc_tree.cc
+@@ -832,7 +832,7 @@ TreeNode *TreeAddIP(const char *buffer, CPTTree *tree, int type) {
      switch(type)    {
  
          case IPV4_TREE:
@@ -19,7 +21,7 @@ Last-Update: 2018-12-11
              memset(ip_strv4, 0x0, NETMASK_32);
  
              strncpy(ip_strv4, buffer, sizeof(ip_strv4));
-@@ -857,18 +857,17 @@ TreeNode *TreeAddIP(const char *buffer,
+@@ -857,18 +857,17 @@ TreeNode *TreeAddIP(const char *buffer, CPTTree *tree, int type) {
                  ip_strv4[pos] = '\0';
              }
  
@@ -41,7 +43,7 @@ Last-Update: 2018-12-11
              memset(ip_strv6, 0x0, NETMASK_128);
  
              strncpy(ip_strv6, buffer, sizeof(ip_strv6));
-@@ -895,7 +894,7 @@ TreeNode *TreeAddIP(const char *buffer,
+@@ -895,7 +894,7 @@ TreeNode *TreeAddIP(const char *buffer, CPTTree *tree, int type) {
                  ip_strv6[pos] = '\0';
              }
  
@@ -50,7 +52,7 @@ Last-Update: 2018-12-11
  
              if (ret <= 0)
              {
-@@ -904,7 +903,7 @@ TreeNode *TreeAddIP(const char *buffer,
+@@ -904,7 +903,7 @@ TreeNode *TreeAddIP(const char *buffer, CPTTree *tree, int type) {
  
              tree->count++;
  

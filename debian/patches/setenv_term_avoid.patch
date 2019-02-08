@@ -1,18 +1,22 @@
-Description: Avoid to use ENV:TERM in the regression tests
- There was a bug in Debian build flows: the sbuild environment doesn't
- sets the TERM environment, which was used until the tests.
- This issue had been fixed in upstream, but will release just in
- next release.
-Author: Ervin Hegedus <airween@gmail.com>
+From: Ervin Hegedus <airween@gmail.com>
+Date: Fri, 8 Feb 2019 13:12:04 +0100
+Subject: Avoid to use ENV:TERM in the regression tests
 
+There was a bug in Debian build flows: the sbuild environment doesn't
+sets the TERM environment, which was used until the tests.
+This issue had been fixed in upstream, but will release just in
+next release.
 ---
-Origin: upstream
-Bug: https://github.com/SpiderLabs/ModSecurity/issues/1969
-Last-Update: 2018-12-04
+ src/actions/set_env.cc                       |  2 +-
+ test/regression/regression.cc                |  5 +++
+ test/test-cases/regression/variable-ENV.json | 55 +++++++++++++++++++++++++---
+ 3 files changed, 56 insertions(+), 6 deletions(-)
 
---- modsecurity-3.0.3.orig/src/actions/set_env.cc
-+++ modsecurity-3.0.3/src/actions/set_env.cc
-@@ -37,7 +37,7 @@ bool SetENV::evaluate(Rule *rule, Transa
+diff --git a/src/actions/set_env.cc b/src/actions/set_env.cc
+index 82381ff..ad54170 100644
+--- a/src/actions/set_env.cc
++++ b/src/actions/set_env.cc
+@@ -37,7 +37,7 @@ bool SetENV::evaluate(Rule *rule, Transaction *t) {
      ms_dbg_a(t, 8, "Setting envoriment variable: "
          + colNameExpanded + ".");
  
@@ -21,8 +25,10 @@ Last-Update: 2018-12-04
  
      return true;
  }
---- modsecurity-3.0.3.orig/test/regression/regression.cc
-+++ modsecurity-3.0.3/test/regression/regression.cc
+diff --git a/test/regression/regression.cc b/test/regression/regression.cc
+index 15721a1..6f5b3a4 100644
+--- a/test/regression/regression.cc
++++ b/test/regression/regression.cc
 @@ -424,6 +424,11 @@ after_debug_log:
  
  int main(int argc, char **argv) {
@@ -35,8 +41,10 @@ Last-Update: 2018-12-04
  #ifndef NO_LOGS
      int test_number = 0;
  #endif
---- modsecurity-3.0.3.orig/test/test-cases/regression/variable-ENV.json
-+++ modsecurity-3.0.3/test/test-cases/regression/variable-ENV.json
+diff --git a/test/test-cases/regression/variable-ENV.json b/test/test-cases/regression/variable-ENV.json
+index b5d0c70..c890b95 100644
+--- a/test/test-cases/regression/variable-ENV.json
++++ b/test/test-cases/regression/variable-ENV.json
 @@ -2,7 +2,7 @@
    {
      "enabled":1,

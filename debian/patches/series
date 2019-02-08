@@ -1,3 +1,4 @@
 disable-network-dependent-tests.patch
 setenv_term_avoid.patch
 bigendian_fix.patch
+0004-Preparing-to-3.0.4.patch
