@@ -45,31 +45,37 @@ bool SetVar::evaluate(Rule *rule, Transaction *t) {
     std::string resolvedPre;
 
     if (m_string) {
-        resolvedPre = m_string->evaluate(t);
+        resolvedPre = m_string->evaluate(t, rule);
     }
 
     std::string m_variableNameExpanded;
     std::vector<const VariableValue *> l;
 
     auto *v = m_variable.get();
-    Variables::Tx_DynamicElement *tx = dynamic_cast<Variables::Tx_DynamicElement *> (v);
-    Variables::Session_DynamicElement *session = dynamic_cast<Variables::Session_DynamicElement *> (v);
-    Variables::Ip_DynamicElement *ip = dynamic_cast<Variables::Ip_DynamicElement *> (v);
-    Variables::Resource_DynamicElement *resource = dynamic_cast<Variables::Resource_DynamicElement *> (v);
-    Variables::Global_DynamicElement *global = dynamic_cast<Variables::Global_DynamicElement *> (v);
-    Variables::User_DynamicElement *user = dynamic_cast<Variables::User_DynamicElement *> (v);
+    Variables::Tx_DynamicElement *tx = dynamic_cast<
+        Variables::Tx_DynamicElement *> (v);
+    Variables::Session_DynamicElement *session = dynamic_cast<
+        Variables::Session_DynamicElement *> (v);
+    Variables::Ip_DynamicElement *ip = dynamic_cast<
+        Variables::Ip_DynamicElement *> (v);
+    Variables::Resource_DynamicElement *resource = dynamic_cast<
+        Variables::Resource_DynamicElement *> (v);
+    Variables::Global_DynamicElement *global = dynamic_cast<
+        Variables::Global_DynamicElement *> (v);
+    Variables::User_DynamicElement *user = dynamic_cast<
+        Variables::User_DynamicElement *> (v);
     if (tx) {
-        m_variableNameExpanded = tx->m_string->evaluate(t);
+        m_variableNameExpanded = tx->m_string->evaluate(t, rule);
     } else if (session) {
-        m_variableNameExpanded = session->m_string->evaluate(t);
+        m_variableNameExpanded = session->m_string->evaluate(t, rule);
     } else if (ip) {
-        m_variableNameExpanded = ip->m_string->evaluate(t);
+        m_variableNameExpanded = ip->m_string->evaluate(t, rule);
     } else if (resource) {
-        m_variableNameExpanded = resource->m_string->evaluate(t);
+        m_variableNameExpanded = resource->m_string->evaluate(t, rule);
     } else if (global) {
-        m_variableNameExpanded = global->m_string->evaluate(t);
+        m_variableNameExpanded = global->m_string->evaluate(t, rule);
     } else if (user) {
-        m_variableNameExpanded = user->m_string->evaluate(t);
+        m_variableNameExpanded = user->m_string->evaluate(t, rule);
     } else {
         m_variableNameExpanded = m_variable->m_name;
     }
@@ -127,30 +133,30 @@ bool SetVar::evaluate(Rule *rule, Transaction *t) {
         }
     }
 
-#ifndef NO_LOGS
-    t->debug(8, "Saving variable: " + m_variable->m_collectionName \
+    ms_dbg_a(t, 8, "Saving variable: " + m_variable->m_collectionName \
         + ":" + m_variableNameExpanded + " with value: " + targetValue);
-#endif
-        if (tx) {
-            tx->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
-        } else if (session) {
-            session->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
-        } else if (ip) {
-            ip->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
-        } else if (resource) {
-            resource->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
-        } else if (global) {
-            global->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
-        } else if (user) {
-            user->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
-        } else {
-            // ?
-        }
-/*
-        t->m_collections.storeOrUpdateFirst(m_variable->m_collectionName,
-            m_variableNameExpanded,
-            t->m_rules->m_secWebAppId.m_value, targetValue);
-            */
+
+    if (tx) {
+        tx->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
+    } else if (session) {
+        session->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
+    } else if (ip) {
+        ip->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
+    } else if (resource) {
+        resource->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
+    } else if (global) {
+        global->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
+    } else if (user) {
+        user->storeOrUpdateFirst(t, m_variableNameExpanded, targetValue);
+    } else {
+        // ?
+    }
+
+    /*
+    t->m_collections.storeOrUpdateFirst(m_variable->m_collectionName,
+        m_variableNameExpanded,
+        t->m_rules->m_secWebAppId.m_value, targetValue);
+    */
 end:
     return true;
 }

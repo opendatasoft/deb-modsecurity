@@ -104,7 +104,6 @@ std::pair<msc_file_handler *, FILE *> SharedFiles::add_new_handler(
 
     if (toBeCreated) {
         memset(new_debug_log, '\0', sizeof(msc_file_handler_t));
-        pthread_mutex_init(&new_debug_log->lock, NULL);
         new_debug_log->shm_id_structure = shm_id;
         memcpy(new_debug_log->file_name, fileName.c_str(), fileName.size());
         new_debug_log->file_name[fileName.size()] = '\0';
@@ -127,6 +126,7 @@ err_fh:
 
 bool SharedFiles::open(const std::string& fileName, std::string *error) {
     std::pair<msc_file_handler *, FILE *> a;
+    bool ret = true;
 
     #if MODSEC_USE_GENERAL_LOCK
     pthread_mutex_lock(m_generalLock);
@@ -136,11 +136,13 @@ bool SharedFiles::open(const std::string& fileName, std::string *error) {
     if (a.first == NULL) {
         a = add_new_handler(fileName, error);
         if (error->size() > 0) {
+            ret = false;
             goto out;
         }
     }
     if (a.first == NULL) {
         error->assign("Not able to open: " + fileName);
+        ret = false;
         goto out;
     }
 
@@ -149,7 +151,7 @@ out:
     pthread_mutex_unlock(m_generalLock);
 #endif
 
-    return true;
+    return ret;
 }
 
 
@@ -219,6 +221,7 @@ bool SharedFiles::write(const std::string& fileName,
     std::pair<msc_file_handler *, FILE *> a;
     std::string lmsg = msg;
     size_t wrote;
+    struct flock lock{};
     bool ret = true;
 
     a = find_handler(fileName);
@@ -227,15 +230,21 @@ bool SharedFiles::write(const std::string& fileName,
         return false;
     }
 
-    pthread_mutex_lock(&a.first->lock);
-    wrote = fwrite(reinterpret_cast<const char *>(lmsg.c_str()), 1,
-        lmsg.size(), a.second);
+    //Exclusively lock whole file
+    lock.l_start = lock.l_len = lock.l_whence = 0;
+    lock.l_type = F_WRLCK;
+    fcntl(fileno(a.second), F_SETLKW, &lock);
+
+    wrote = fwrite(lmsg.c_str(), 1, lmsg.size(), a.second);
     if (wrote < msg.size()) {
         error->assign("failed to write: " + fileName);
         ret = false;
     }
     fflush(a.second);
-    pthread_mutex_unlock(&a.first->lock);
+
+    //Remove exclusive lock
+    lock.l_type = F_UNLCK;
+    fcntl(fileno(a.second), F_SETLKW, &lock);
 
     return ret;
 }

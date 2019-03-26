@@ -21,6 +21,7 @@
 #include <vector>
 #include <list>
 #include <set>
+#include <cstring>
 #endif
 
 
@@ -34,6 +35,22 @@
 #include "modsecurity/actions/action.h"
 #include "modsecurity/audit_log.h"
 
+#define CODEPAGE_SEPARATORS  " \t\n\r"
+
+#define merge_boolean_value(to, from, default)                               \
+    if (to == PropertyNotSetConfigBoolean) {                                 \
+        to = (from == PropertyNotSetConfigBoolean) ? default : from;         \
+    }
+
+#define merge_ruleengine_value(to, from, default)                            \
+    if (to == PropertyNotSetRuleEngine) {                                    \
+        to = (from == PropertyNotSetRuleEngine) ? default : from;            \
+    }
+
+#define merge_bodylimitaction_value(to, from, default)                       \
+    if (to == PropertyNotSetBodyLimitAction) {                               \
+        to = (from == PropertyNotSetBodyLimitAction) ? default : from;       \
+    }
 
 #ifdef __cplusplus
 
@@ -52,6 +69,15 @@ class ConfigInt {
     ConfigInt() : m_set(false), m_value(0) { }
     bool m_set;
     int m_value;
+
+    void merge(ConfigInt *from) {
+        if (m_set == true || from->m_set == false) {
+            return;
+        }
+        m_set = true;
+        m_value = from->m_value;
+        return;
+    }
 };
 
 
@@ -60,6 +86,15 @@ class ConfigDouble {
     ConfigDouble() : m_set(false), m_value(0) { }
     bool m_set;
     double m_value;
+
+    void merge(ConfigDouble *from) {
+        if (m_set == true || from->m_set == false) {
+            return;
+        }
+        m_set = true;
+        m_value = from->m_value;
+        return;
+    }
 };
 
 
@@ -68,6 +103,15 @@ class ConfigString {
     ConfigString() : m_set(false), m_value("") { }
     bool m_set;
     std::string m_value;
+
+    void merge(ConfigString *from) {
+        if (m_set == true || from->m_set == false) {
+            return;
+        }
+        m_set = true;
+        m_value = from->m_value;
+        return;
+    }
 };
 
 
@@ -80,12 +124,49 @@ class ConfigSet {
 };
 
 
+class UnicodeMapHolder {
+ public:
+    UnicodeMapHolder() {
+        memset(m_data, -1, (sizeof(int)*65536));
+    };
+
+    int& operator[](int index) { return m_data[index]; }
+    int operator[](int index) const { return m_data[index]; }
+
+    int at(int index) const { return m_data[index]; }
+    void change(int i, int a) { m_data[i] = a; }
+
+    int m_data[65536];
+};
+
+
+class RulesProperties;
 class ConfigUnicodeMap {
  public:
-    ConfigUnicodeMap() : m_set(false), m_unicode_map_table(NULL) { }
+    ConfigUnicodeMap() : m_set(false),
+        m_unicodeCodePage(0),
+        m_unicodeMapTable(NULL) { }
+
+    static void loadConfig(std::string f, double codePage,
+        RulesProperties *driver, std::string *errg);
+
+    void merge(ConfigUnicodeMap *from) {
+        if (from->m_set == false) {
+            return;
+        }
+
+        m_set = true;
+        m_unicodeCodePage = from->m_unicodeCodePage;
+        m_unicodeMapTable = from->m_unicodeMapTable;
+
+        return;
+    }
+
     bool m_set;
-    int *m_unicode_map_table;
+    double m_unicodeCodePage;
+    std::shared_ptr<modsecurity::UnicodeMapHolder> m_unicodeMapTable;
 };
+
 
 class RulesProperties {
  public:
@@ -278,87 +359,52 @@ class RulesProperties {
             return amount_of_rules;
         }
 
-        if (from->m_secRuleEngine != PropertyNotSetRuleEngine) {
-            to->m_secRuleEngine = from->m_secRuleEngine;
-        }
+        merge_ruleengine_value(to->m_secRuleEngine, from->m_secRuleEngine,
+                               PropertyNotSetRuleEngine);
 
-        if (from->m_secRequestBodyAccess != PropertyNotSetConfigBoolean) {
-            to->m_secRequestBodyAccess = from->m_secRequestBodyAccess;
-        }
+        merge_boolean_value(to->m_secRequestBodyAccess,
+                            from->m_secRequestBodyAccess,
+                            PropertyNotSetConfigBoolean);
 
-        if (from->m_secResponseBodyAccess != PropertyNotSetConfigBoolean) {
-            to->m_secResponseBodyAccess = from->m_secResponseBodyAccess;
-        }
+        merge_boolean_value(to->m_secResponseBodyAccess,
+                            from->m_secResponseBodyAccess,
+                            PropertyNotSetConfigBoolean);
 
-        if (from->m_secXMLExternalEntity != PropertyNotSetConfigBoolean) {
-            to->m_secXMLExternalEntity = from->m_secXMLExternalEntity;
-        }
+        merge_boolean_value(to->m_secXMLExternalEntity,
+                            from->m_secXMLExternalEntity,
+                            PropertyNotSetConfigBoolean);
 
-        if (from->m_uploadKeepFiles != PropertyNotSetConfigBoolean) {
-            to->m_uploadKeepFiles = from->m_uploadKeepFiles;
-        }
+        merge_boolean_value(to->m_uploadKeepFiles,
+                            from->m_uploadKeepFiles,
+                            PropertyNotSetConfigBoolean);
 
-        if (from->m_tmpSaveUploadedFiles != PropertyNotSetConfigBoolean) {
-            to->m_tmpSaveUploadedFiles = from->m_tmpSaveUploadedFiles;
-        }
+        merge_boolean_value(to->m_tmpSaveUploadedFiles,
+                            from->m_tmpSaveUploadedFiles,
+                            PropertyNotSetConfigBoolean);
 
-        if (from->m_requestBodyLimit.m_set == true) {
-            to->m_requestBodyLimit.m_value = from->m_requestBodyLimit.m_value;
-        }
+        to->m_requestBodyLimit.merge(&from->m_requestBodyLimit);
+        to->m_responseBodyLimit.merge(&from->m_responseBodyLimit);
 
-        if (from->m_responseBodyLimit.m_set == true) {
-            to->m_responseBodyLimit.m_value = from->m_responseBodyLimit.m_value;
-        }
+        merge_bodylimitaction_value(to->m_requestBodyLimitAction,
+                                    from->m_requestBodyLimitAction,
+                                    PropertyNotSetBodyLimitAction);
 
-        if (from->m_requestBodyLimitAction != PropertyNotSetBodyLimitAction) {
-            to->m_requestBodyLimitAction = from->m_requestBodyLimitAction;
-        }
+        merge_bodylimitaction_value(to->m_responseBodyLimitAction,
+                                    from->m_responseBodyLimitAction,
+                                    PropertyNotSetBodyLimitAction);
 
-        if (from->m_responseBodyLimitAction != PropertyNotSetBodyLimitAction) {
-            to->m_responseBodyLimitAction = from->m_responseBodyLimitAction;
-        }
+        to->m_uploadFileLimit.merge(&from->m_uploadFileLimit);
+        to->m_uploadFileMode.merge(&from->m_uploadFileMode);
+        to->m_uploadDirectory.merge(&from->m_uploadDirectory);
+        to->m_uploadTmpDirectory.merge(&from->m_uploadTmpDirectory);
 
-        if (from->m_uploadFileLimit.m_set == true) {
-            to->m_uploadFileLimit.m_value = from->m_uploadFileLimit.m_value;
-        }
+        to->m_secArgumentSeparator.merge(&from->m_secArgumentSeparator);
 
-        if (from->m_uploadFileMode.m_set == true) {
-            to->m_uploadFileMode.m_value = from->m_uploadFileMode.m_value;
-        }
+        to->m_secWebAppId.merge(&from->m_secWebAppId);
 
-        if (from->m_uploadDirectory.m_set == true) {
-            to->m_uploadDirectory.m_value = from->m_uploadDirectory.m_value;
-            to->m_uploadDirectory.m_set = true;
-        }
+        to->m_unicodeMapTable.merge(&from->m_unicodeMapTable);
 
-        if (from->m_uploadTmpDirectory.m_set == true) {
-            to->m_uploadTmpDirectory.m_value = \
-                from->m_uploadTmpDirectory.m_value;
-            to->m_uploadTmpDirectory.m_set = true;
-        }
-
-        if (from->m_secArgumentSeparator.m_set == true) {
-            to->m_secArgumentSeparator.m_value = \
-                from->m_secArgumentSeparator.m_value;
-            to->m_secArgumentSeparator.m_set = true;
-        }
-
-        if (from->m_secWebAppId.m_set == true) {
-            to->m_secWebAppId.m_value = \
-                from->m_secWebAppId.m_value;
-            to->m_secWebAppId.m_set = true;
-        }
-
-        if (from->m_unicodeMapTable.m_set == true) {
-            to->m_unicodeMapTable.m_unicode_map_table = \
-                from->m_unicodeMapTable.m_unicode_map_table;
-            to->m_unicodeMapTable.m_set = true;
-        }
-
-        if (from->m_httpblKey.m_set == true) {
-            to->m_httpblKey.m_value = from->m_httpblKey.m_value;
-            to->m_httpblKey.m_set = from->m_httpblKey.m_set;
-        }
+        to->m_httpblKey.merge(&from->m_httpblKey);
 
         to->m_exceptions.merge(&from->m_exceptions);
 
@@ -371,15 +417,16 @@ class RulesProperties {
                 from->m_responseBodyTypeToBeInspected.m_value.clear();
             } else {
                 for (std::set<std::string>::iterator
-                        it = from->m_responseBodyTypeToBeInspected.m_value.begin();
-                        it != from->m_responseBodyTypeToBeInspected.m_value.end(); ++it) {
+                    it = from->m_responseBodyTypeToBeInspected.m_value.begin();
+                    it != from->m_responseBodyTypeToBeInspected.m_value.end();
+                    ++it) {
                     to->m_responseBodyTypeToBeInspected.m_value.insert(*it);
                 }
             }
             to->m_responseBodyTypeToBeInspected.m_set = true;
         }
 
-        for (int i = 0; i <= modsecurity::Phases::NUMBER_OF_PHASES; i++) {
+        for (int i = 0; i < modsecurity::Phases::NUMBER_OF_PHASES; i++) {
             std::vector<actions::Action *> *actions_from = \
                 from->m_defaultActions+i;
             std::vector<actions::Action *> *actions_to = to->m_defaultActions+i;
@@ -430,27 +477,36 @@ class RulesProperties {
         std::vector<modsecurity::Rule *> *to,
         std::ostringstream *err) {
         int amount_of_rules = 0;
+        // TODO: std::vector could be replaced with something more efficient.
+        std::vector<int64_t> v;
         for (int i = 0; i < modsecurity::Phases::NUMBER_OF_PHASES; i++) {
             std::vector<modsecurity::Rule *> *rules_to = to+i;
+            v.reserve(rules_to->size());
+            for (size_t z = 0; z < rules_to->size(); z++) {
+                Rule *rule_ckc = rules_to->at(z);
+                if (rule_ckc->m_secMarker == true) {
+                    continue;
+                }
+                v.push_back(rule_ckc->m_ruleId);
+            }
+        }
+        std::sort (v.begin(), v.end());
+
+        for (int i = 0; i < modsecurity::Phases::NUMBER_OF_PHASES; i++) {
             std::vector<modsecurity::Rule *> *rules_from = from+i;
+            std::vector<modsecurity::Rule *> *rules_to = to+i;
             for (size_t j = 0; j < rules_from->size(); j++) {
                 Rule *rule = rules_from->at(j);
-                for (size_t z = 0; z < rules_to->size(); z++) {
-                    Rule *rule_ckc = rules_to->at(z);
-                    if (rule_ckc->m_ruleId == rule->m_ruleId &&
-                        rule_ckc->m_secMarker == false &&
-                        rule->m_secMarker == false) {
-                        if (err != NULL) {
-                            *err << "Rule id: " \
-                                 << std::to_string(rule->m_ruleId) \
-                                 << " is duplicated" << std::endl;
-                        }
-                        return -1;
+                if (std::binary_search(v.begin(), v.end(), rule->m_ruleId)) {
+                    if (err != NULL) {
+                        *err << "Rule id: " << std::to_string(rule->m_ruleId) \
+                            << " is duplicated" << std::endl;
                     }
+                    return -1;
                 }
                 amount_of_rules++;
-                rules_to->push_back(rule);
                 rule->refCountIncrease();
+                rules_to->push_back(rule);
             }
         }
         return amount_of_rules;
@@ -490,10 +546,11 @@ class RulesProperties {
     ConfigString m_uploadTmpDirectory;
     ConfigString m_secArgumentSeparator;
     ConfigString m_secWebAppId;
-    std::vector<actions::Action *> m_defaultActions[8];
-    std::vector<modsecurity::Rule *> m_rules[8];
+    std::vector<actions::Action *> m_defaultActions[modsecurity::Phases::NUMBER_OF_PHASES];
+    std::vector<modsecurity::Rule *> m_rules[modsecurity::Phases::NUMBER_OF_PHASES];
     ConfigUnicodeMap m_unicodeMapTable;
 };
+
 
 #endif
 
