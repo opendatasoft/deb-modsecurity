@@ -1,3 +1,11 @@
+modsecurity (3.0.3-2ods.debian3) stretch; urgency=medium
+
+  * Rebuild with latest v3/master branch commit
+  * debian/patches:
+    - removed ugly big patch to update from unreleased v3/master branch
+
+ -- Kevin Roy <kiniou@gmail.com>  Tue, 26 Mar 2019 19:53:17 +0100
+
 modsecurity (3.0.3-2ods.debian2) stretch; urgency=medium
 
   * debian/patches:
