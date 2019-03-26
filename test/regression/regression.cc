@@ -15,6 +15,8 @@
 
 #include <string.h>
 
+#include <unistd.h>
+
 #include <ctime>
 #include <iostream>
 #include <string>
@@ -136,6 +138,12 @@ void perform_unit_test(ModSecurityTest<RegressionTest> *test,
             continue;
         }
 
+#ifdef WITH_LMDB
+        // some tests (e.g. issue-1831.json)  don't like it when data persists between runs
+        unlink("./modsec-shared-collections");
+        unlink("./modsec-shared-collections-lock");
+#endif
+
         modsec = new modsecurity::ModSecurity();
         modsec->setConnectorInformation("ModSecurity-regression v0.0.1-alpha" \
             " (ModSecurity regression test utility)");
@@ -202,7 +210,7 @@ void perform_unit_test(ModSecurityTest<RegressionTest> *test,
             SMatch match;
             std::string s = modsec_rules->getParserError();
 
-            if (regex_search(s, &match, re) && match.size() >= 1) {
+            if (regex_search(s, &match, re)) {
                 if (test->m_automake_output) {
                     std::cout << ":test-result: PASS " << filename \
                         << ":" << t->name << std::endl;
@@ -424,6 +432,11 @@ after_debug_log:
 
 int main(int argc, char **argv) {
     ModSecurityTest<RegressionTest> test;
+
+    std::string ver(MODSECURITY_VERSION);
+    std::string envvar("MODSECURITY=ModSecurity " + ver + " regression tests");
+
+    putenv(strdup(envvar.c_str()));
 #ifndef NO_LOGS
     int test_number = 0;
 #endif

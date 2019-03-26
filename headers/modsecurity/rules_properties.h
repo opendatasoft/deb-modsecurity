@@ -37,6 +37,21 @@
 
 #define CODEPAGE_SEPARATORS  " \t\n\r"
 
+#define merge_boolean_value(to, from, default)                               \
+    if (to == PropertyNotSetConfigBoolean) {                                 \
+        to = (from == PropertyNotSetConfigBoolean) ? default : from;         \
+    }
+
+#define merge_ruleengine_value(to, from, default)                            \
+    if (to == PropertyNotSetRuleEngine) {                                    \
+        to = (from == PropertyNotSetRuleEngine) ? default : from;            \
+    }
+
+#define merge_bodylimitaction_value(to, from, default)                       \
+    if (to == PropertyNotSetBodyLimitAction) {                               \
+        to = (from == PropertyNotSetBodyLimitAction) ? default : from;       \
+    }
+
 #ifdef __cplusplus
 
 namespace modsecurity {
@@ -54,6 +69,15 @@ class ConfigInt {
     ConfigInt() : m_set(false), m_value(0) { }
     bool m_set;
     int m_value;
+
+    void merge(ConfigInt *from) {
+        if (m_set == true || from->m_set == false) {
+            return;
+        }
+        m_set = true;
+        m_value = from->m_value;
+        return;
+    }
 };
 
 
@@ -62,6 +86,15 @@ class ConfigDouble {
     ConfigDouble() : m_set(false), m_value(0) { }
     bool m_set;
     double m_value;
+
+    void merge(ConfigDouble *from) {
+        if (m_set == true || from->m_set == false) {
+            return;
+        }
+        m_set = true;
+        m_value = from->m_value;
+        return;
+    }
 };
 
 
@@ -70,6 +103,15 @@ class ConfigString {
     ConfigString() : m_set(false), m_value("") { }
     bool m_set;
     std::string m_value;
+
+    void merge(ConfigString *from) {
+        if (m_set == true || from->m_set == false) {
+            return;
+        }
+        m_set = true;
+        m_value = from->m_value;
+        return;
+    }
 };
 
 
@@ -317,83 +359,52 @@ class RulesProperties {
             return amount_of_rules;
         }
 
-        if (from->m_secRuleEngine != PropertyNotSetRuleEngine) {
-            to->m_secRuleEngine = from->m_secRuleEngine;
-        }
+        merge_ruleengine_value(to->m_secRuleEngine, from->m_secRuleEngine,
+                               PropertyNotSetRuleEngine);
 
-        if (from->m_secRequestBodyAccess != PropertyNotSetConfigBoolean) {
-            to->m_secRequestBodyAccess = from->m_secRequestBodyAccess;
-        }
+        merge_boolean_value(to->m_secRequestBodyAccess,
+                            from->m_secRequestBodyAccess,
+                            PropertyNotSetConfigBoolean);
 
-        if (from->m_secResponseBodyAccess != PropertyNotSetConfigBoolean) {
-            to->m_secResponseBodyAccess = from->m_secResponseBodyAccess;
-        }
+        merge_boolean_value(to->m_secResponseBodyAccess,
+                            from->m_secResponseBodyAccess,
+                            PropertyNotSetConfigBoolean);
 
-        if (from->m_secXMLExternalEntity != PropertyNotSetConfigBoolean) {
-            to->m_secXMLExternalEntity = from->m_secXMLExternalEntity;
-        }
+        merge_boolean_value(to->m_secXMLExternalEntity,
+                            from->m_secXMLExternalEntity,
+                            PropertyNotSetConfigBoolean);
 
-        if (from->m_uploadKeepFiles != PropertyNotSetConfigBoolean) {
-            to->m_uploadKeepFiles = from->m_uploadKeepFiles;
-        }
+        merge_boolean_value(to->m_uploadKeepFiles,
+                            from->m_uploadKeepFiles,
+                            PropertyNotSetConfigBoolean);
 
-        if (from->m_tmpSaveUploadedFiles != PropertyNotSetConfigBoolean) {
-            to->m_tmpSaveUploadedFiles = from->m_tmpSaveUploadedFiles;
-        }
+        merge_boolean_value(to->m_tmpSaveUploadedFiles,
+                            from->m_tmpSaveUploadedFiles,
+                            PropertyNotSetConfigBoolean);
 
-        if (from->m_requestBodyLimit.m_set == true) {
-            to->m_requestBodyLimit.m_value = from->m_requestBodyLimit.m_value;
-        }
+        to->m_requestBodyLimit.merge(&from->m_requestBodyLimit);
+        to->m_responseBodyLimit.merge(&from->m_responseBodyLimit);
 
-        if (from->m_responseBodyLimit.m_set == true) {
-            to->m_responseBodyLimit.m_value = from->m_responseBodyLimit.m_value;
-        }
+        merge_bodylimitaction_value(to->m_requestBodyLimitAction,
+                                    from->m_requestBodyLimitAction,
+                                    PropertyNotSetBodyLimitAction);
 
-        if (from->m_requestBodyLimitAction != PropertyNotSetBodyLimitAction) {
-            to->m_requestBodyLimitAction = from->m_requestBodyLimitAction;
-        }
+        merge_bodylimitaction_value(to->m_responseBodyLimitAction,
+                                    from->m_responseBodyLimitAction,
+                                    PropertyNotSetBodyLimitAction);
 
-        if (from->m_responseBodyLimitAction != PropertyNotSetBodyLimitAction) {
-            to->m_responseBodyLimitAction = from->m_responseBodyLimitAction;
-        }
+        to->m_uploadFileLimit.merge(&from->m_uploadFileLimit);
+        to->m_uploadFileMode.merge(&from->m_uploadFileMode);
+        to->m_uploadDirectory.merge(&from->m_uploadDirectory);
+        to->m_uploadTmpDirectory.merge(&from->m_uploadTmpDirectory);
 
-        if (from->m_uploadFileLimit.m_set == true) {
-            to->m_uploadFileLimit.m_value = from->m_uploadFileLimit.m_value;
-        }
+        to->m_secArgumentSeparator.merge(&from->m_secArgumentSeparator);
 
-        if (from->m_uploadFileMode.m_set == true) {
-            to->m_uploadFileMode.m_value = from->m_uploadFileMode.m_value;
-        }
-
-        if (from->m_uploadDirectory.m_set == true) {
-            to->m_uploadDirectory.m_value = from->m_uploadDirectory.m_value;
-            to->m_uploadDirectory.m_set = true;
-        }
-
-        if (from->m_uploadTmpDirectory.m_set == true) {
-            to->m_uploadTmpDirectory.m_value = \
-                from->m_uploadTmpDirectory.m_value;
-            to->m_uploadTmpDirectory.m_set = true;
-        }
-
-        if (from->m_secArgumentSeparator.m_set == true) {
-            to->m_secArgumentSeparator.m_value = \
-                from->m_secArgumentSeparator.m_value;
-            to->m_secArgumentSeparator.m_set = true;
-        }
-
-        if (from->m_secWebAppId.m_set == true) {
-            to->m_secWebAppId.m_value = \
-                from->m_secWebAppId.m_value;
-            to->m_secWebAppId.m_set = true;
-        }
+        to->m_secWebAppId.merge(&from->m_secWebAppId);
 
         to->m_unicodeMapTable.merge(&from->m_unicodeMapTable);
 
-        if (from->m_httpblKey.m_set == true) {
-            to->m_httpblKey.m_value = from->m_httpblKey.m_value;
-            to->m_httpblKey.m_set = from->m_httpblKey.m_set;
-        }
+        to->m_httpblKey.merge(&from->m_httpblKey);
 
         to->m_exceptions.merge(&from->m_exceptions);
 
@@ -415,7 +426,7 @@ class RulesProperties {
             to->m_responseBodyTypeToBeInspected.m_set = true;
         }
 
-        for (int i = 0; i <= modsecurity::Phases::NUMBER_OF_PHASES; i++) {
+        for (int i = 0; i < modsecurity::Phases::NUMBER_OF_PHASES; i++) {
             std::vector<actions::Action *> *actions_from = \
                 from->m_defaultActions+i;
             std::vector<actions::Action *> *actions_to = to->m_defaultActions+i;
@@ -535,8 +546,8 @@ class RulesProperties {
     ConfigString m_uploadTmpDirectory;
     ConfigString m_secArgumentSeparator;
     ConfigString m_secWebAppId;
-    std::vector<actions::Action *> m_defaultActions[8];
-    std::vector<modsecurity::Rule *> m_rules[8];
+    std::vector<actions::Action *> m_defaultActions[modsecurity::Phases::NUMBER_OF_PHASES];
+    std::vector<modsecurity::Rule *> m_rules[modsecurity::Phases::NUMBER_OF_PHASES];
     ConfigUnicodeMap m_unicodeMapTable;
 };
 

@@ -13,34 +13,34 @@
  *
  */
 
-#include "src/actions/set_env.h"
-
-#include <iostream>
 #include <string>
+#include <memory>
 
+#include "modsecurity/actions/action.h"
 #include "modsecurity/transaction.h"
-#include "modsecurity/rule.h"
-#include "src/utils/string.h"
+#include "modsecurity/rules.h"
+#include "modsecurity/rule_message.h"
+
+#ifndef SRC_ACTIONS_DISRUPTIVE_DROP_H_
+#define SRC_ACTIONS_DISRUPTIVE_DROP_H_
 
 namespace modsecurity {
 namespace actions {
+namespace disruptive {
 
 
-bool SetENV::init(std::string *error) {
-    return true;
-}
+class Drop : public Action {
+ public:
+    explicit Drop(std::string action) : Action(action) { }
+
+    bool evaluate(Rule *rule, Transaction *transaction,
+        std::shared_ptr<RuleMessage> rm) override;
+    bool isDisruptive() override { return true; }
+};
 
 
-bool SetENV::evaluate(Rule *rule, Transaction *t) {
-    std::string colNameExpanded(m_string->evaluate(t));
-
-    ms_dbg_a(t, 8, "Setting envoriment variable: "
-        + colNameExpanded + ".");
-
-    putenv(strdup(colNameExpanded.c_str()));
-
-    return true;
-}
-
+}  // namespace disruptive
 }  // namespace actions
 }  // namespace modsecurity
+
+#endif  // SRC_ACTIONS_DISRUPTIVE_DROP_H_

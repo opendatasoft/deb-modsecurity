@@ -13,34 +13,40 @@
  *
  */
 
-#include "src/actions/set_env.h"
+#include "src/actions/disruptive/drop.h"
 
+#include <string.h>
 #include <iostream>
 #include <string>
+#include <cstring>
+#include <memory>
 
 #include "modsecurity/transaction.h"
-#include "modsecurity/rule.h"
-#include "src/utils/string.h"
 
 namespace modsecurity {
 namespace actions {
+namespace disruptive {
 
 
-bool SetENV::init(std::string *error) {
+bool Drop::evaluate(Rule *rule, Transaction *transaction,
+    std::shared_ptr<RuleMessage> rm) {
+    ms_dbg_a(transaction, 8, "Running action drop " \
+        "[executing deny instead of drop.]");
+
+    if (transaction->m_it.status == 200) {
+        transaction->m_it.status = 403;
+    }
+
+    transaction->m_it.disruptive = true;
+    intervention::freeLog(&transaction->m_it);
+    rm->m_isDisruptive = true;
+    transaction->m_it.log = strdup(
+        rm->log(RuleMessage::LogMessageInfo::ClientLogMessageInfo).c_str());
+
     return true;
 }
 
 
-bool SetENV::evaluate(Rule *rule, Transaction *t) {
-    std::string colNameExpanded(m_string->evaluate(t));
-
-    ms_dbg_a(t, 8, "Setting envoriment variable: "
-        + colNameExpanded + ".");
-
-    putenv(strdup(colNameExpanded.c_str()));
-
-    return true;
-}
-
+}  // namespace disruptive
 }  // namespace actions
 }  // namespace modsecurity
