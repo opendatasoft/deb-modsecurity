@@ -80,6 +80,11 @@ class Rule {
         Variables::Variables *exclusion, Variables::Variables *addition);
     inline void getFinalVars(Variables::Variables *vars,
         Variables::Variables *eclusion, Transaction *trans);
+    bool checkExcludedVariable(const std::string& key,
+                               const std::string& excluded);
+    bool checkExclusions(const std::string &key,
+                         Variables::Variables& exclusion,
+                         Transaction* trans);
     void executeActionsAfterFullMatch(Transaction *trasn,
         bool containsDisruptive, std::shared_ptr<RuleMessage> ruleMessage);
 
