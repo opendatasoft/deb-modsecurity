@@ -570,8 +570,12 @@ bool Rule::checkExcludedVariable(const std::string& key,
 bool Rule::checkExclusions(const std::string &key,
                            Variables::Variables& exclusion,
                            Transaction* trans) {
-    ms_dbg_a(trans, 9, std::string("Checking ") + key + " against static exclusions " + &exclusion);
-    if (exclusion.contains(key)) {
+    if (std::find_if(exclusion.begin(),
+                     exclusion.end(),
+                     [&, this](Variables::Variable *e) -> bool {
+                         ms_dbg_a(trans, 9, std::string("Checking ") + key + " against static exclusion " + *e->m_fullName.get());
+                         return checkExcludedVariable(key, *e->m_fullName.get());
+                     }) != exclusion.end()) {
         return true;
     }
     if (std::find_if(trans->m_ruleRemoveTargetById.begin(),
