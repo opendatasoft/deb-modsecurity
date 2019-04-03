@@ -1,3 +1,9 @@
+modsecurity (3.0.3-2ods.debian3~jleproust2) stretch; urgency=medium
+
+  * Rebuild
+
+ -- Kevin Roy <kiniou@gmail.com>  Wed, 03 Apr 2019 17:58:09 +0200
+
 modsecurity (3.0.3-2ods.debian3~jleproust1) stretch; urgency=medium
 
   * Rebuild with forked v3/master branch of https://github.com/jleproust/ModSecurity.git
