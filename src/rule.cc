@@ -510,6 +510,8 @@ inline void Rule::getFinalVars(Variables::Variables *vars,
 
     getVariablesExceptions(trans, exclusion, &addition);
 
+    ms_dbg_a(trans, 9, std::string("Initial variables ") + m_variables + " exclusions " + exclusion);
+
     for (int i = 0; i < m_variables->size(); i++) {
         Variable *variable = m_variables->at(i);
         std::vector<const VariableValue *> e;
@@ -544,6 +546,54 @@ inline void Rule::getFinalVars(Variables::Variables *vars,
     }
 }
 
+
+bool Rule::checkExcludedVariable(const std::string& key,
+                                 const std::string& excluded) {
+    // exact match
+    if (key == excluded) {
+        return true;
+    }
+    // prefix match: excluded is a prefix of key,
+    // and key's next character is first ':' or '.' after a ':'
+    if (key.length() > excluded.length() &&
+        std::mismatch(excluded.begin(), excluded.end(), key.begin()).first
+            == excluded.end() &&
+        ((excluded.find(':') == std::string::npos
+            && key.at(excluded.length()) == ':') ||
+         (excluded.find(':') != std::string::npos
+            && key.at(excluded.length()) == '.'))) {
+        return true;
+    }
+    return false;
+}
+
+bool Rule::checkExclusions(const std::string &key,
+                           Variables::Variables& exclusion,
+                           Transaction* trans) {
+    ms_dbg_a(trans, 9, std::string("Checking ") + key + " against static exclusions " + &exclusion);
+    if (exclusion.contains(key)) {
+        return true;
+    }
+    if (std::find_if(trans->m_ruleRemoveTargetById.begin(),
+                     trans->m_ruleRemoveTargetById.end(),
+                     [&, this](std::pair<int, std::string> &m) -> bool {
+                         ms_dbg_a(trans, 9, std::string("Checking ") + key + " against dynamic exclusion by id " + m.second);
+                         return m.first == m_ruleId &&
+                             checkExcludedVariable(key, m.second);
+                     }) != trans->m_ruleRemoveTargetById.end()) {
+        return true;
+    }
+    if (std::find_if(trans->m_ruleRemoveTargetByTag.begin(),
+                     trans->m_ruleRemoveTargetByTag.end(),
+                     [&, this](std::pair<std::string, std::string> &m) -> bool {
+                         ms_dbg_a(trans, 9, std::string("Checking ") + key + " against dynamic exclusion by tag " + m.second);
+                         return containsTag(m.first, trans) &&
+                             checkExcludedVariable(key, m.second);
+                     }) != trans->m_ruleRemoveTargetByTag.end()) {
+        return true;
+    }
+    return false;
+}
 
 
 void Rule::executeAction(Transaction *trans,
@@ -689,6 +739,8 @@ bool Rule::evaluate(Transaction *trans,
 
     getFinalVars(&vars, &exclusion, trans);
 
+    ms_dbg_a(trans, 9, std::string("Final vars ") + &vars + " excluding " + &exclusion);
+
     for (auto &var : vars) {
         std::vector<const VariableValue *> e;
         if (!var) {
@@ -699,24 +751,8 @@ bool Rule::evaluate(Transaction *trans,
             const std::string &value = v->m_value;
             const std::string &key = v->m_key;
 
-            if (exclusion.contains(v->m_key) ||
-                std::find_if(trans->m_ruleRemoveTargetById.begin(),
-                    trans->m_ruleRemoveTargetById.end(),
-                    [&, v, this](std::pair<int, std::string> &m) -> bool {
-                        return m.first == m_ruleId && m.second == v->m_key;
-                    }) != trans->m_ruleRemoveTargetById.end()
-            ) {
-                delete v;
-                v = NULL;
-                continue;
-            }
-            if (exclusion.contains(v->m_key) ||
-                std::find_if(trans->m_ruleRemoveTargetByTag.begin(),
-                    trans->m_ruleRemoveTargetByTag.end(),
-                    [&, v, trans, this](std::pair<std::string, std::string> &m) -> bool {
-                        return containsTag(m.first, trans) && m.second == v->m_key;
-                    }) != trans->m_ruleRemoveTargetByTag.end()
-            ) {
+            if (checkExclusions(key, exclusion, trans)) {
+                ms_dbg_a(trans, 9, std::string("Excluded match on key ") + key);
                 delete v;
                 v = NULL;
                 continue;
