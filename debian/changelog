@@ -1,3 +1,9 @@
+modsecurity (3.0.3-2ods.debian3~jleproust6) stretch; urgency=medium
+
+  * Rebuild
+
+ -- Kevin Roy <kiniou@gmail.com>  Thu, 11 Apr 2019 15:13:06 +0200
+
 modsecurity (3.0.3-2ods.debian3~jleproust5) stretch; urgency=medium
 
   * Rebuild
