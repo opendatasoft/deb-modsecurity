@@ -1,4 +1,4 @@
-modsecurity (3.0.3-2ods.debian3~jleproust6) stretch; urgency=medium
+modsecurity (3.0.3.201904111503-1~ods1) stretch; urgency=medium
 
   * Rebuild
 
