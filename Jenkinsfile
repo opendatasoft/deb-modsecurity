@@ -1,10 +1,9 @@
 pipeline {
     agent any
-
+    checkout scm
     stages {
         stage('Build') {
             steps {
-                echo 'Building..'
                 sh 'gbp buildpackage'
             }
         }
