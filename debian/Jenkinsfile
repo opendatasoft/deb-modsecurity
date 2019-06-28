@@ -1,9 +1,9 @@
 pipeline {
     agent { label 'debian-builder' }
     stages {
-        stage('Build') {
+        stage('build') {
             steps {
-                sh 'gbp buildpackage'
+                sh 'gbp buildpackage --git-export-dir=./build'
             }
         }
     }
