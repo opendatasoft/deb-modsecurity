@@ -1,3 +1,9 @@
+modsecurity (3.0.3.201904111503-1~ods2) buster; urgency=medium
+
+  * Rebuild for Debian buster release
+
+ -- Kevin Roy <kiniou@gmail.com>  Wed, 04 Nov 2020 16:36:13 +0100
+
 modsecurity (3.0.3.201904111503-1~ods1) stretch; urgency=medium
 
   * Rebuild
@@ -45,7 +51,7 @@ modsecurity (3.0.3-2ods.debian3) stretch; urgency=medium
 modsecurity (3.0.3-2ods.debian2) stretch; urgency=medium
 
   * debian/patches:
-    - Update source with current 3.0.4 commits 
+    - Update source with current 3.0.4 commits
 
  -- Kevin Roy <kiniou@gmail.com>  Wed, 02 Jan 2019 19:06:50 +0100
 
